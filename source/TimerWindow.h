@@ -1,4 +1,7 @@
 #pragma once
+
+class TimerGraphic;
+
 class TimerWindow
 {
 public:
@@ -20,4 +23,5 @@ private:
 
 private:
 	HWND hwnd_;
+	TimerGraphic* graph_;
 };

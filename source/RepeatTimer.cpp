@@ -16,6 +16,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+    ULONG_PTR token;
+    Gdiplus::GdiplusStartupInput gpsi;
+    Gdiplus::GdiplusStartup(&token, &gpsi, NULL); // TODO: RAII
+
     TimerWindow* test = new TimerWindow();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_REPEATTIMER));
@@ -31,6 +35,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+
+    Gdiplus::GdiplusShutdown(token); // TODO: RAII
 
     return (int) msg.wParam;
 }

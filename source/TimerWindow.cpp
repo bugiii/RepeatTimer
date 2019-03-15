@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "TimerWindow.h"
+#include "TimerGraphic.h"
 
 namespace bugiii_timer_window {
 	LPCWSTR className_ = L"TimerWindow_Class";
 	ATOM classAtom_ = 0;
-	int count_ = 0;
+	int windowCount_ = 0;
 }
 
 using namespace bugiii_timer_window;
@@ -15,8 +16,11 @@ static HINSTANCE defaultInstance()
 	return (HINSTANCE)GetModuleHandle(nullptr);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 TimerWindow::TimerWindow() :
-	hwnd_(0)
+	hwnd_(0),
+	graph_(new TimerGraphic)
 {
 	if (!classAtom_) {
 		classAtom_ = registerClass();
@@ -24,19 +28,23 @@ TimerWindow::TimerWindow() :
 
 	hwnd_ = createWindow();
 	if (hwnd_) {
-		++count_;
+		++windowCount_;
 	}
 }
 
 TimerWindow::~TimerWindow()
 {
+	delete graph_;
+
 	if (hwnd_) {
-		--count_;
-		if (0 == count_) {
+		--windowCount_;
+		if (0 == windowCount_) {
 			PostQuitMessage(0);
 		}
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 ATOM TimerWindow::registerClass()
 {
@@ -60,7 +68,7 @@ ATOM TimerWindow::registerClass()
 
 HWND TimerWindow::createWindow()
 {
-	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW /* WS_EX_LAYERED*/,
+	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_LAYERED,
 		MAKEINTATOM(classAtom_), L"", WS_POPUP | WS_OVERLAPPEDWINDOW,
 		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), nullptr);
 
@@ -73,9 +81,12 @@ HWND TimerWindow::createWindow()
 
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 	UpdateWindow(hwnd);
+	InvalidateRect(hwnd, NULL, FALSE);
 
 	return hwnd;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 LRESULT CALLBACK TimerWindow::staticWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -95,6 +106,8 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 	default: return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 {
@@ -119,5 +132,6 @@ void TimerWindow::onPaint(HWND hwnd)
 {
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(hwnd, &ps);
+	graph_->draw(hwnd, hdc);
 	EndPaint(hwnd, &ps);
 }
