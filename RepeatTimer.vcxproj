@@ -147,14 +147,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="RepeatTimer.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
+    <ClInclude Include="source\RepeatTimer.h" />
+    <ClInclude Include="source\Resource.h" />
+    <ClInclude Include="source\stdafx.h" />
+    <ClInclude Include="source\targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RepeatTimer.cpp" />
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="source\RepeatTimer.cpp" />
+    <ClCompile Include="source\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -162,11 +162,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="RepeatTimer.rc" />
+    <ResourceCompile Include="source\RepeatTimer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="RepeatTimer.ico" />
-    <Image Include="small.ico" />
+    <Image Include="resource\RepeatTimer.ico" />
+    <Image Include="resource\small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
