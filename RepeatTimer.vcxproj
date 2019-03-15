@@ -151,6 +151,7 @@
     <ClInclude Include="source\Resource.h" />
     <ClInclude Include="source\stdafx.h" />
     <ClInclude Include="source\targetver.h" />
+    <ClInclude Include="source\TimerWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\RepeatTimer.cpp" />
@@ -160,6 +161,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="source\TimerWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="source\RepeatTimer.rc" />
