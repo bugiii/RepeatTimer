@@ -75,12 +75,12 @@ public:
 	float resetSec;
 	Gdiplus::Color dialColor;
 	Gdiplus::Color pieColor;
-	float pieBegin, pieEnd;
+	Gdiplus::REAL pieBegin, pieEnd;
 	Gdiplus::Color scaleColor;
-	float smallScaleThickness, smallScaleBegin, smallScaleEnd;
-	float bigScaleThickness, bigScaleBegin, bigScaleEnd;
+	Gdiplus::REAL smallScaleThickness, smallScaleBegin, smallScaleEnd;
+	Gdiplus::REAL bigScaleThickness, bigScaleBegin, bigScaleEnd;
 	Gdiplus::Color knobColor;
-	float knobEnd;
+	Gdiplus::REAL knobEnd;
 
 private:
 	TimerMaxSec maxSec_;

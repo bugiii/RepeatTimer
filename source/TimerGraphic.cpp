@@ -3,6 +3,9 @@
 #include <gdiplus.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cwchar>
+#include <cstdio>
+#include <cstdarg>
 #include "TimerGraphic.h"
 
 #ifndef M_PI
@@ -32,22 +35,16 @@ namespace bugiii_timer_graph {
 		MAKE5_6(7), MAKE5_6(8), MAKE5_6(9), MAKE5_6(10)
 	};
 
-	// big scale
-	#define MAKEBIG(a) (360/(a))
-
-	const int bigScaleUnit[] = {
-		MAKEBIG(5), MAKEBIG(10), MAKEBIG(3), MAKEBIG(4), MAKEBIG(6), MAKEBIG(9),
-		MAKEBIG(12),
-		MAKEBIG(12), MAKEBIG(12), MAKEBIG(8), MAKEBIG(10)
+	const int bigScaleDiv[] = {
+		5, 10, 3, 4, 6, 9,
+		12,
+		12, 12, 8, 10
 	};
 
-	// small scale
-	#define MAKESMALL(a,b) (bigScaleUnit[(a)]/(b))
-
-	const int smallScaleUnit[] = {
-		MAKESMALL(TM_5,6), MAKESMALL(TM_10,6), MAKESMALL(TM_15,5), MAKESMALL(TM_20,5), MAKESMALL(TM_30,5), MAKESMALL(TM_45,5),
-		MAKESMALL(TM_60,5),
-		MAKESMALL(TM_120,10), MAKESMALL(TM_180,10), MAKESMALL(TM_240,10), MAKESMALL(TM_300,10)
+	const int smallScaleDiv[] = {
+		6, 6, 5, 5, 5, 5,
+		5,
+		10, 5, 6, 10
 	};
 }
 
@@ -71,7 +68,7 @@ GdiPlusInit::~GdiPlusInit() {
 TimerGraphic::TimerGraphic(const std::string& id) :
 	remainSec(50 * 60), 
 	id_(id),
-	maxSecIndex(TM_60),
+	maxSecIndex(TM_240),
 	resetSec(static_cast<REAL>(resetDefaultSec[maxSecIndex])),
 	dialColor(128, 255, 255, 255),
 	pieColor(128, 255, 0, 0),
@@ -201,11 +198,12 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 {
 	Graphics G(hdc);
 
-	G.SetSmoothingMode(SmoothingMode::SmoothingModeAntiAlias); // TODO: option
+	G.SetSmoothingMode(SmoothingModeAntiAlias); // TODO: option
+	G.SetTextRenderingHint(TextRenderingHintClearTypeGridFit); // TODO: option
 
 	// screen coordinate to rectangular coordinate
 	G.TranslateTransform(w / 2.0f, h / 2.0f);
-	// scale (w, h) to (-1, 1) & flip y coordinate
+	// scale (0,0)-(w, h) to (-1, 0)-(1,-1) & flip y coordinate
 	G.ScaleTransform(w / 2.0f, -h / 2.0f);
 	GraphicsState gs = G.Save();
 
@@ -214,24 +212,39 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	SolidBrush dialBrush(dialColor);
 	fillCircle(G, &dialBrush, 1.0f);
 
-	// Scale
+	// Scale, Index
 	// TODO: visible option (small?)
 	Pen smallScalePen(scaleColor, smallScaleThickness);
 	Pen bigScalePen(scaleColor, bigScaleThickness);
-	for (int degree = 0; degree < 360; degree += smallScaleUnit[maxSecIndex]) {
-		if (0 == degree % bigScaleUnit[maxSecIndex]) {
-			G.DrawLine(&bigScalePen, 0.0f, bigScaleBegin, 0.0f, bigScaleEnd);
+	SolidBrush indexTextBrush(Color::Black);
+	Font indexTextFont(L"Segoe UI", knobEnd / 2);
+	RectF indexTextRect(-knobEnd, -bigScaleBegin, 2*knobEnd, knobEnd);
+	StringFormat indexTextFormat;
+	indexTextFormat.SetAlignment(StringAlignmentCenter);
+	indexTextFormat.SetLineAlignment(StringAlignmentCenter);
+
+	for (int bigIndex = 0; bigIndex < bigScaleDiv[maxSecIndex]; ++bigIndex) {
+		G.DrawLine(&bigScalePen, 0.0f, bigScaleBegin, 0.0f, bigScaleEnd);
+
+		wchar_t buffer[256] = L"";
+		_snwprintf_s(buffer, sizeof buffer / sizeof buffer[0], _TRUNCATE, L"%d", bigIndex * maxSec_ / bigScaleDiv[maxSecIndex] / 60);
+		G.ScaleTransform(1.0f, -1.0f);
+		G.DrawString(buffer, -1, &indexTextFont, indexTextRect, &indexTextFormat, &indexTextBrush);
+		G.ScaleTransform(1.0f, -1.0f);
+
+		for (int smallIndex = 0; smallIndex < smallScaleDiv[maxSecIndex]; ++smallIndex) {
+			REAL degree = 360.0f / (bigScaleDiv[maxSecIndex] * smallScaleDiv[maxSecIndex]);
+			G.RotateTransform(-degree);
+			if (smallScaleDiv[maxSecIndex] - 1 != smallIndex) {
+				G.DrawLine(&smallScalePen, 0.0f, smallScaleBegin, 0.0f, smallScaleEnd);
+			}
 		}
-		else {
-			G.DrawLine(&smallScalePen, 0.0f, smallScaleBegin, 0.0f, smallScaleEnd);
-		}
-		G.RotateTransform(static_cast<REAL>(smallScaleUnit[maxSecIndex]));
 	}
 
 	// Pie
 	G.Restore(gs);
 	gs = G.Save();
-	G.RotateTransform(90); // top is 0 degree
+	G.RotateTransform(-270.0f); // top is 0 degree
 
 	SolidBrush pieBrush(pieColor);
 	REAL remainDegree = -remainSec * 360.0f / maxSec_;
@@ -240,6 +253,22 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	// Knob
 	SolidBrush knobBrush(knobColor);
 	fillCircle(G, &knobBrush, knobEnd);
+
+	// Remain Text
+	G.Restore(gs);
+	gs = G.Save();
+	G.ScaleTransform(1.0f, -1.0f);
+	SolidBrush remainTextBrush(Color::Black);
+	Font remainTextFont(L"Segoe UI", knobEnd/2);
+	RectF remainTextRect(-knobEnd, -knobEnd, 2 * knobEnd, 2 * knobEnd);
+	StringFormat remainTextFormat;
+
+	remainTextFormat.SetAlignment(StringAlignmentCenter);
+	remainTextFormat.SetLineAlignment(StringAlignmentCenter);
+
+	wchar_t buffer[256] = L"";
+	_snwprintf_s(buffer, sizeof buffer / sizeof buffer[0], _TRUNCATE, L"%d", remainSec/60);
+	G.DrawString(buffer, -1, &remainTextFont, remainTextRect, &remainTextFormat, &remainTextBrush);
 	  
 	G.Flush();
 }
