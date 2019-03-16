@@ -8,25 +8,40 @@ using namespace Gdiplus;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-TimerMaxSec timerMaxSec[] = {
-	TMS_5, TMS_10, TMS_15, TMS_20, TMS_30, TMS_45, TMS_60, TMS_120, TMS_180, TMS_240, TMS_300
-};
+namespace bugiii_timer_graph {
+	TimerMaxSec timerMaxSec[] = {
+		TMS_5, TMS_10, TMS_15, TMS_20, TMS_30, TMS_45, TMS_60, TMS_120, TMS_180, TMS_240, TMS_300
+	};
 
-#define MAKEBIG(a) (360/(a))
+	// 5/6
+	#define MAKE5_6(a) ((timerMaxSec[a])*5/6)
 
-const int bigScaleUnit[] = {
-	MAKEBIG(5), MAKEBIG(10), MAKEBIG(3), MAKEBIG(4), MAKEBIG(6), MAKEBIG(9),
-	MAKEBIG(12),
-	MAKEBIG(12), MAKEBIG(12), MAKEBIG(8), MAKEBIG(10)
-};
+	int resetDefaultSec[] = {
+		MAKE5_6(0), MAKE5_6(1), MAKE5_6(2), MAKE5_6(3), MAKE5_6(4), MAKE5_6(5),
+		MAKE5_6(6),
+		MAKE5_6(7), MAKE5_6(8), MAKE5_6(9), MAKE5_6(10)
+	};
 
-#define MAKESMALL(a,b) (bigScaleUnit[(a)]/(b))
+	// big scale
+	#define MAKEBIG(a) (360/(a))
 
-const int smallScaleUnit[] = {
-	MAKESMALL(TM_5,6), MAKESMALL(TM_10,6), MAKESMALL(TM_15,5), MAKESMALL(TM_20,5), MAKESMALL(TM_30,5), MAKESMALL(TM_45,5),
-	MAKESMALL(TM_60,5),
-	MAKESMALL(TM_120,10), MAKESMALL(TM_180,10), MAKESMALL(TM_240,10), MAKESMALL(TM_300,10)
-};
+	const int bigScaleUnit[] = {
+		MAKEBIG(5), MAKEBIG(10), MAKEBIG(3), MAKEBIG(4), MAKEBIG(6), MAKEBIG(9),
+		MAKEBIG(12),
+		MAKEBIG(12), MAKEBIG(12), MAKEBIG(8), MAKEBIG(10)
+	};
+
+	// small scale
+	#define MAKESMALL(a,b) (bigScaleUnit[(a)]/(b))
+
+	const int smallScaleUnit[] = {
+		MAKESMALL(TM_5,6), MAKESMALL(TM_10,6), MAKESMALL(TM_15,5), MAKESMALL(TM_20,5), MAKESMALL(TM_30,5), MAKESMALL(TM_45,5),
+		MAKESMALL(TM_60,5),
+		MAKESMALL(TM_120,10), MAKESMALL(TM_180,10), MAKESMALL(TM_240,10), MAKESMALL(TM_300,10)
+	};
+}
+
+using namespace bugiii_timer_graph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -47,7 +62,7 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	remainSec(50 * 60), 
 	id_(id),
 	maxSecIndex(TM_60),
-	resetSec(maxSecIndex * 100 / 80),
+	resetSec(resetDefaultSec[maxSecIndex]),
 	dialColor(128, 255, 255, 255),
 	pieColor(128, 255, 0, 0),
 	pieBegin(0.2f),
@@ -67,6 +82,18 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 
 TimerGraphic::~TimerGraphic()
 {
+}
+
+bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
+{
+	RECT rect;
+	GetWindowRect(hwnd, &rect);
+
+	x = x - rect.left - (rect.right - rect.left) / 2;
+	y = rect.top - y + (rect.bottom - rect.top) / 2;
+	float r = knobEnd * (rect.right - rect.left) / 2;
+
+	return 0 <= r * r - (x*x + y * y);
 }
 
 void fillCircle(Graphics& G, Brush* brush, REAL r)

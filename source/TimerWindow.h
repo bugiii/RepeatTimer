@@ -24,6 +24,7 @@ private:
 private:
 	void onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
 	void onDestroy(HWND hwnd);
+	UINT onNCHitTest(HWND hwnd, int x, int y);
 	void onPaint(HWND hwnd);
 
 private:

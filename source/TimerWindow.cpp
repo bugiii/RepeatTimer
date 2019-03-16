@@ -102,6 +102,7 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 	{
 		HANDLE_MSG(hwnd, WM_COMMAND, onCommand);
 		HANDLE_MSG(hwnd, WM_DESTROY, onDestroy);
+		HANDLE_MSG(hwnd, WM_NCHITTEST, onNCHitTest);
 		HANDLE_MSG(hwnd, WM_PAINT, onPaint);
 
 	default: return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -127,6 +128,11 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 void TimerWindow::onDestroy(HWND hwnd)
 {
 	delete this;
+}
+
+UINT TimerWindow::onNCHitTest(HWND hwnd, int x, int y)
+{
+	return graph_->inKnob(hwnd, x, y) ? HTCAPTION : HTCLIENT;
 }
 
 void TimerWindow::onPaint(HWND hwnd)

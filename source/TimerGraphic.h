@@ -16,7 +16,7 @@ public:
 
 private:
 	ULONG_PTR token_ = 0;
-};
+}; //TODO: singleton
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +62,7 @@ public:
 
 public:
 	void draw(HWND hwnd, HDC hdc);
+	bool inKnob(HWND hwnd, int x, int y);
 
 private:
 	void draw(HDC hdc, int w, int h);
