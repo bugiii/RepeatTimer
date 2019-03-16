@@ -1,7 +1,17 @@
 #include "stdafx.h"
 #include <ole2.h>
 #include <gdiplus.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "TimerGraphic.h"
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
+#ifndef M_PIl
+#define M_PIl (3.14159265358979323846264338327950288)
+#endif
 
 #pragma comment(lib, "gdiplus")
 using namespace Gdiplus;
@@ -62,7 +72,7 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	remainSec(50 * 60), 
 	id_(id),
 	maxSecIndex(TM_60),
-	resetSec(resetDefaultSec[maxSecIndex]),
+	resetSec(static_cast<REAL>(resetDefaultSec[maxSecIndex])),
 	dialColor(128, 255, 255, 255),
 	pieColor(128, 255, 0, 0),
 	pieBegin(0.2f),
@@ -89,11 +99,59 @@ bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
 	RECT rect;
 	GetWindowRect(hwnd, &rect);
 
-	x = x - rect.left - (rect.right - rect.left) / 2;
-	y = rect.top - y + (rect.bottom - rect.top) / 2;
+	// screen coordinate to rectangular and client coordinate
+	x = x - (rect.right - rect.left) / 2 - rect.left;
+	y = (rect.bottom - rect.top) / 2 - y + rect.top;
 	float r = knobEnd * (rect.right - rect.left) / 2;
 
 	return 0 <= r * r - (x*x + y * y);
+}
+
+int TimerGraphic::remainSecFromXY(HWND hwnd, int x, int y)
+{
+	RECT rect;
+	GetWindowRect(hwnd, &rect);
+
+	// client coordinate to rectangular coordinate
+	x = x - (rect.right - rect.left) / 2;
+	y = (rect.bottom - rect.top) / 2 - y;
+
+	/*
+		MAGIC FORMULA :)
+
+		The result value of atan2(y,x) is as follows according to
+		the angle.
+			0 <= th < 180 -> 0 <= remain < pi
+			180 <= th < 360 -> -pi <= remain < 0
+
+		Since the value changes discontinuously at 180 degrees,
+		if the result is negative, it is necessary to add 2 pi.
+
+		However, I would like to be able to eliminate conditional
+		statements with a single expression.
+
+		First, if pi is added unconditionally to the result of atan2,
+		the result is:
+			0 <= th < 180 -> pi <= remain < 2*pi
+			180 <= th < 360 -> 0 <= remain < pi
+
+		The resulting value is continuous but the starting angle is
+		180 degrees and the point is selected which is symmetrical to
+		the mouse position and center.
+
+		Therefore, if the signs of the x and y coordinates are reversed,
+		a desired result can be obtained.
+
+		However, another operation is necessary because it requires
+		90 degree rotation and clockwise rotation.
+
+		The 90 degree rotation can be solved by changing the x and y
+		positions, and the clockwise rotation can be done by changing
+		the sign where the pie is displayed.
+	*/
+	int r = static_cast<int>((M_PI + atan2(static_cast<float>(-x), static_cast<float>(-y))) * 180 / M_PI * maxSec_ / 360);
+	remainSec = (r + 59) / 60 * 60; // raising to a minute.
+	return remainSec;
 }
 
 void fillCircle(Graphics& G, Brush* brush, REAL r)
@@ -147,6 +205,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	// screen coordinate to rectangular coordinate
 	G.TranslateTransform(w / 2.0f, h / 2.0f);
+	// scale (w, h) to (-1, 1) & flip y coordinate
 	G.ScaleTransform(w / 2.0f, -h / 2.0f);
 	GraphicsState gs = G.Save();
 
@@ -166,7 +225,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 		else {
 			G.DrawLine(&smallScalePen, 0.0f, smallScaleBegin, 0.0f, smallScaleEnd);
 		}
-		G.RotateTransform(smallScaleUnit[maxSecIndex]);
+		G.RotateTransform(static_cast<REAL>(smallScaleUnit[maxSecIndex]));
 	}
 
 	// Pie

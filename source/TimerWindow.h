@@ -24,6 +24,9 @@ private:
 private:
 	void onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
 	void onDestroy(HWND hwnd);
+	void onLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags);
+	void onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags);
+	void onMouseMove(HWND hwnd, int x, int y, UINT keyFlags);
 	UINT onNCHitTest(HWND hwnd, int x, int y);
 	void onPaint(HWND hwnd);
 
@@ -31,4 +34,5 @@ private:
 	std::string id_;
 	HWND hwnd_;
 	TimerGraphic* graph_;
+	bool captured_;
 };

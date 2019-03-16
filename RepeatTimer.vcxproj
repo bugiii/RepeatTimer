@@ -153,6 +153,7 @@
     <ClInclude Include="source\targetver.h" />
     <ClInclude Include="source\TimerWindow.h" />
     <ClInclude Include="source\TimerGraphic.h" />
+    <ClInclude Include="source\Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\RepeatTimer.cpp" />
@@ -164,6 +165,7 @@
     </ClCompile>
     <ClCompile Include="source\TimerWindow.cpp" />
     <ClCompile Include="source\TimerGraphic.cpp" />
+    <ClCompile Include="source\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="source\RepeatTimer.rc" />

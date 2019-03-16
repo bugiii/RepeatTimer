@@ -21,7 +21,8 @@ static HINSTANCE defaultInstance()
 TimerWindow::TimerWindow(const std::string& id) :
 	id_(id),
 	hwnd_(0),
-	graph_(new TimerGraphic(id))
+	graph_(new TimerGraphic(id)),
+	captured_(false)
 {
 	if (!classAtom_) {
 		classAtom_ = registerClass();
@@ -74,7 +75,7 @@ HWND TimerWindow::createWindow()
 		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), nullptr);
 
 	if (!hwnd) {
-		return FALSE;
+		return 0;
 	}
 
 	// save this pointer
@@ -102,6 +103,9 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 	{
 		HANDLE_MSG(hwnd, WM_COMMAND, onCommand);
 		HANDLE_MSG(hwnd, WM_DESTROY, onDestroy);
+		HANDLE_MSG(hwnd, WM_LBUTTONDOWN, onLButtonDown);
+		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
+		HANDLE_MSG(hwnd, WM_MOUSEMOVE, onMouseMove);
 		HANDLE_MSG(hwnd, WM_NCHITTEST, onNCHitTest);
 		HANDLE_MSG(hwnd, WM_PAINT, onPaint);
 
@@ -128,6 +132,30 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 void TimerWindow::onDestroy(HWND hwnd)
 {
 	delete this;
+}
+
+void TimerWindow::onLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
+{
+	SetCapture(hwnd);
+	captured_ = true;
+	onMouseMove(hwnd, x, y, keyFlags);	
+}
+
+void TimerWindow::onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
+{
+	if (captured_) {
+		captured_ = false;
+		ReleaseCapture();
+		onMouseMove(hwnd, x, y, keyFlags);
+	}
+}
+
+void TimerWindow::onMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
+{
+	if (captured_) {
+		graph_->remainSecFromXY(hwnd, x, y);
+		InvalidateRect(hwnd, NULL, 0);
+	}
 }
 
 UINT TimerWindow::onNCHitTest(HWND hwnd, int x, int y)
