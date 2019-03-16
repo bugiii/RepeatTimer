@@ -18,9 +18,10 @@ static HINSTANCE defaultInstance()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-TimerWindow::TimerWindow() :
+TimerWindow::TimerWindow(const std::string& id) :
+	id_(id),
 	hwnd_(0),
-	graph_(new TimerGraphic)
+	graph_(new TimerGraphic(id))
 {
 	if (!classAtom_) {
 		classAtom_ = registerClass();
@@ -69,7 +70,7 @@ ATOM TimerWindow::registerClass()
 HWND TimerWindow::createWindow()
 {
 	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_LAYERED,
-		MAKEINTATOM(classAtom_), L"", WS_POPUP | WS_OVERLAPPEDWINDOW,
+		MAKEINTATOM(classAtom_), L"", WS_POPUP,
 		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), nullptr);
 
 	if (!hwnd) {

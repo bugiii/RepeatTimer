@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "RepeatTimer.h"
 #include "TimerWindow.h"
+#include "TimerGraphic.h"
 
 // Forward declarations of functions included in this code module:
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
@@ -16,11 +17,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    ULONG_PTR token;
-    Gdiplus::GdiplusStartupInput gpsi;
-    Gdiplus::GdiplusStartup(&token, &gpsi, NULL); // TODO: RAII
+    GdiPlusInit gdiplus;
 
-    TimerWindow* test = new TimerWindow();
+    TimerWindow* test = new TimerWindow("Timer 0");
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_REPEATTIMER));
 
@@ -35,8 +34,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
-
-    Gdiplus::GdiplusShutdown(token); // TODO: RAII
 
     return (int) msg.wParam;
 }
