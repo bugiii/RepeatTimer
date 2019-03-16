@@ -22,30 +22,27 @@ using namespace Gdiplus;
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace bugiii_timer_graph {
-	TimerMaxSec timerMaxSec[] = {
-		TMS_5, TMS_10, TMS_15, TMS_20, TMS_30, TMS_45, TMS_60, TMS_120, TMS_180, TMS_240, TMS_300
+	TimerMaxSec timerMaxSec[TM_MAX] = {
+		TMS_5, TMS_10, TMS_15, TMS_20, TMS_30, TMS_60, TMS_120, TMS_180, TMS_240, TMS_300
 	};
 
-	// 5/6
-	#define MAKE5_6(a) ((timerMaxSec[a])*5/6)
-
-	int resetDefaultSec[] = {
-		MAKE5_6(0), MAKE5_6(1), MAKE5_6(2), MAKE5_6(3), MAKE5_6(4), MAKE5_6(5),
-		MAKE5_6(6),
-		MAKE5_6(7), MAKE5_6(8), MAKE5_6(9), MAKE5_6(10)
+	const int bigScaleDiv[TM_MAX] = {
+		5, 10, 3, 4, 6,
+		12, 12, 12, 8, 10
 	};
 
-	const int bigScaleDiv[] = {
-		5, 10, 3, 4, 6, 9,
-		12,
-		12, 12, 8, 10
+	const int smallScaleDiv[TM_MAX] = {
+		6, 6, 5, 5, 5,
+		5, 10, 5, 6, 10
 	};
 
-	const int smallScaleDiv[] = {
-		6, 6, 5, 5, 5, 5,
-		5,
-		10, 5, 6, 10
+#define MAKETWOLESS(a) (timerMaxSec[(a)] * (bigScaleDiv[(a)]-2) / bigScaleDiv[(a)])
+
+	int resetDefaultSec[TM_MAX] = {
+		MAKETWOLESS(0), MAKETWOLESS(1), MAKETWOLESS(2), MAKETWOLESS(3), MAKETWOLESS(4),
+		MAKETWOLESS(5), MAKETWOLESS(6),	MAKETWOLESS(7), MAKETWOLESS(8), MAKETWOLESS(9)
 	};
+
 }
 
 using namespace bugiii_timer_graph;
@@ -68,8 +65,8 @@ GdiPlusInit::~GdiPlusInit() {
 TimerGraphic::TimerGraphic(const std::string& id) :
 	remainSec(50 * 60), 
 	id_(id),
-	maxSecIndex(TM_240),
-	resetSec(static_cast<REAL>(resetDefaultSec[maxSecIndex])),
+	maxSecIndex(TM_60),
+	resetSec(resetDefaultSec[maxSecIndex]),
 	dialColor(128, 255, 255, 255),
 	pieColor(128, 255, 0, 0),
 	pieBegin(0.2f),
@@ -84,11 +81,17 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	knobColor(128, 64, 64, 64),
 	knobEnd(0.15f)
 {
-	maxSec_ = timerMaxSec[maxSecIndex];
+	remainSec = resetDefaultSec[maxSecIndex]; // TODO:
+	//maxSec_ = timerMaxSec[maxSecIndex];
 }
 
 TimerGraphic::~TimerGraphic()
 {
+}
+
+int TimerGraphic::maxSec()
+{
+	return timerMaxSec[maxSecIndex];
 }
 
 bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
@@ -146,7 +149,7 @@ int TimerGraphic::remainSecFromXY(HWND hwnd, int x, int y)
 		positions, and the clockwise rotation can be done by changing
 		the sign where the pie is displayed.
 	*/
-	int r = static_cast<int>((M_PI + atan2(static_cast<float>(-x), static_cast<float>(-y))) * 180 / M_PI * maxSec_ / 360);
+	int r = static_cast<int>((M_PI + atan2(static_cast<float>(-x), static_cast<float>(-y))) * 180 / M_PI * maxSec() / 360);
 	remainSec = (r + 59) / 60 * 60; // raising to a minute.
 	return remainSec;
 }
@@ -200,6 +203,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	G.SetSmoothingMode(SmoothingModeAntiAlias); // TODO: option
 	G.SetTextRenderingHint(TextRenderingHintClearTypeGridFit); // TODO: option
+	G.SetTextRenderingHint(TextRenderingHintAntiAlias); // TODO: option
 
 	// screen coordinate to rectangular coordinate
 	G.TranslateTransform(w / 2.0f, h / 2.0f);
@@ -227,7 +231,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 		G.DrawLine(&bigScalePen, 0.0f, bigScaleBegin, 0.0f, bigScaleEnd);
 
 		wchar_t buffer[256] = L"";
-		_snwprintf_s(buffer, sizeof buffer / sizeof buffer[0], _TRUNCATE, L"%d", bigIndex * maxSec_ / bigScaleDiv[maxSecIndex] / 60);
+		_snwprintf_s(buffer, dimof(buffer), _TRUNCATE, L"%d", bigIndex * maxSec() / bigScaleDiv[maxSecIndex] / 60);
 		G.ScaleTransform(1.0f, -1.0f);
 		G.DrawString(buffer, -1, &indexTextFont, indexTextRect, &indexTextFormat, &indexTextBrush);
 		G.ScaleTransform(1.0f, -1.0f);
@@ -247,7 +251,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	G.RotateTransform(-270.0f); // top is 0 degree
 
 	SolidBrush pieBrush(pieColor);
-	REAL remainDegree = -remainSec * 360.0f / maxSec_;
+	REAL remainDegree = -remainSec * 360.0f / maxSec();
 	fillDonut(G, &pieBrush, pieBegin, pieEnd, 0.0f, remainDegree);
 
 	// Knob
@@ -267,7 +271,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	remainTextFormat.SetLineAlignment(StringAlignmentCenter);
 
 	wchar_t buffer[256] = L"";
-	_snwprintf_s(buffer, sizeof buffer / sizeof buffer[0], _TRUNCATE, L"%d", remainSec/60);
+	_snwprintf_s(buffer, dimof(buffer), _TRUNCATE, L"%d", remainSec/60);
 	G.DrawString(buffer, -1, &remainTextFont, remainTextRect, &remainTextFormat, &remainTextBrush);
 	  
 	G.Flush();
