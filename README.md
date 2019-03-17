@@ -4,3 +4,10 @@
 
 <img src="https://user-images.githubusercontent.com/273092/54488882-2ca3f300-48ea-11e9-828e-6d082b442310.png" width="256"> <img src="https://user-images.githubusercontent.com/273092/54489020-632e3d80-48eb-11e9-8834-93da3191b751.png" width="256">
 
+## Todo
+
+* other repeat mode (currently only 'on the hour' mode)
+* Customizable Setting
+* UI, color, icon (NEED help)
+* Multi timer (and sticky)
+* Works with mobile devices.
