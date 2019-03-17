@@ -74,6 +74,7 @@ public:
 	TimerMax maxSecIndex;
 	int restartSec;
 	int remainSec;
+	BYTE alpha;
 	Gdiplus::Color dialColor;
 	Gdiplus::Color remainPieColor, sparePieColor;
 	Gdiplus::REAL pieBegin, pieEnd;
@@ -81,8 +82,12 @@ public:
 	Gdiplus::REAL smallScaleThickness, smallScaleBegin, smallScaleEnd;
 	Gdiplus::REAL bigScaleThickness, bigScaleBegin, bigScaleEnd;
 	Gdiplus::REAL indexTextPos;
+	Gdiplus::REAL indexTextFontSize;
 	Gdiplus::Color knobColor;
 	Gdiplus::REAL knobEnd;
+	Gdiplus::REAL fontSize;
+	Gdiplus::Color remainFontColor, spareFontColor;
+	Gdiplus::REAL faintDiv;
 
 private:
 	//TimerMaxSec maxSec_;

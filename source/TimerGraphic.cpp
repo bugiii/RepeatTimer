@@ -67,21 +67,27 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	maxSecIndex(TM_60),
 	restartSec(restartDefaultSec[maxSecIndex]),
 	remainSec(restartDefaultSec[maxSecIndex]),
-	dialColor(128, 255, 255, 255),
-	remainPieColor(128, 255, 0, 0),
-	sparePieColor(128, 0, 255, 0),
-	pieBegin(0.2f),
+	alpha(220),
+	dialColor(alpha, 255, 255, 255),
+	remainPieColor(alpha, 255, 0, 0),
+	sparePieColor(alpha, 0, 255, 0),
+	pieBegin(0.3f),
 	pieEnd(0.95f),
-	scaleColor(128, 96, 96, 96),
+	scaleColor(alpha, 96, 96, 96),
 	smallScaleThickness(0.01f),
-	smallScaleBegin(0.95f),
+	smallScaleBegin(0.975f),
 	smallScaleEnd(1.0f),
 	bigScaleThickness(0.02f),
-	bigScaleBegin(0.9f),
+	bigScaleBegin(0.90f),
 	bigScaleEnd(1.0f),
 	indexTextPos(0.8f),
-	knobColor(128, 64, 64, 64),
-	knobEnd(0.15f)
+	indexTextFontSize(0.075f),
+	knobColor(alpha, 96, 96, 96),
+	knobEnd(0.25f),
+	fontSize(0.1f),
+	remainFontColor(alpha, 196, 32, 32),
+	spareFontColor(alpha, 32, 196, 32),
+	faintDiv(4.0f)
 {
 }
 
@@ -228,6 +234,25 @@ void TimerGraphic::draw(HWND hwnd, HDC hdc)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+Color faintColor(const Color& c, REAL div)
+{
+	// TODO: clamp
+	return Color (
+		static_cast<BYTE>(c.GetA() / div),
+		static_cast<BYTE>(c.GetR() / div),
+		static_cast<BYTE>(c.GetG() / div),
+		static_cast<BYTE>(c.GetB() / div));
+}
+
+Color blendColor(const Color& a, const Color b)
+{
+	return Color(
+		(a.GetA() + b.GetA()) / 2,
+		(a.GetR() + b.GetR()) / 2,
+		(a.GetG() + b.GetG()) / 2,
+		(a.GetB() + b.GetB()) / 2);
+}
+
 void TimerGraphic::draw(HDC hdc, int w, int h)
 {
 	Graphics G(hdc);
@@ -236,6 +261,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	G.SetSmoothingMode(SmoothingModeAntiAlias); // TODO: option
 	G.SetTextRenderingHint(TextRenderingHintClearTypeGridFit); // TODO: option
 	G.SetTextRenderingHint(TextRenderingHintAntiAlias); // TODO: option
+	G.SetInterpolationMode(InterpolationModeHighQuality);
 
 	// screen coordinate to rectangular coordinate
 	G.TranslateTransform(w / 2.0f, h / 2.0f);
@@ -267,7 +293,8 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	Pen smallScalePen(scaleColor, smallScaleThickness);
 	Pen bigScalePen(scaleColor, bigScaleThickness);
 	SolidBrush indexTextBrush(Color::Black);
-	Font indexTextFont(L"Segoe UI", knobEnd / 2);
+	Font indexTextFont(L"Segoe UI", indexTextFontSize);
+	//Gdiplus::Font indexTextFont(L"Arial", fontSize, FontStyleBold, UnitWorld);
 	RectF indexTextRect(-knobEnd, -bigScaleBegin, 2*knobEnd, knobEnd);
 	StringFormat indexTextFormat;
 	indexTextFormat.SetAlignment(StringAlignmentCenter);
@@ -295,15 +322,25 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	REAL remainDegree = -remainSec * 360.0f / maxSec();
 	fillDonut(G, &pieBrush, pieBegin, pieEnd, 0.0f, remainDegree);
 
+	SolidBrush faintBrush(faintColor(remainPieColor, faintDiv));
+	REAL restartDegree = (maxSec() - restartSec) * 360.0f / maxSec();
+	REAL diffDegree = (remainSec - restartSec) * 360.0f / maxSec();
+
+	if (remainSec < restartSec) {
+		fillDonut(G, &faintBrush, pieBegin, pieEnd, restartDegree, -diffDegree);
+	}
+
 	if (restartSec < remainSec) {
-		SolidBrush pieBrush(sparePieColor);
+		pieBrush.SetColor(sparePieColor);
 		REAL spareDegree = (maxSec() - remainSec) * 360.0f / maxSec();
-		REAL diffDegree = (remainSec - restartSec) * 360.0f / maxSec();
 		fillDonut(G, &pieBrush, pieBegin, pieEnd, spareDegree, diffDegree);
 	}
 
+	faintBrush.SetColor(faintColor(sparePieColor, faintDiv));
+	fillDonut(G, &faintBrush, pieBegin, pieEnd, 0, restartDegree);
+
 	// Restart Line
-	Pen restartPen(remainPieColor, 0.01f);
+	Pen restartPen(blendColor(remainPieColor, sparePieColor), 0.01f);
 	G.GetTransform(&mx);
 	G.RotateTransform(-restartSec * 360.0f / maxSec());
 	G.DrawLine(&restartPen, pieBegin, 0.0f, pieEnd, 0.0f);
@@ -315,7 +352,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	// Remain Text
 	SolidBrush remainTextBrush(Color::Black);
-	Font remainTextFont(L"Segoe UI", knobEnd/2);
+	Gdiplus::Font remainTextFont(L"Arial", fontSize, FontStyleRegular);
 	RectF remainTextRect(-knobEnd, -knobEnd, 2 * knobEnd, 2 * knobEnd);
 	StringFormat remainTextFormat;
 	remainTextFormat.SetAlignment(StringAlignmentCenter);
@@ -326,26 +363,27 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	int rMin = oSec / 60 % 60;
 	int rSec = oSec % 60;
 
+	std::wstring knobTextString;
 	if (0 < rHour) { // hour, min
-		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
-			L"%d\x1D34\n%2d\x1D39", rHour, rMin);
+		knobTextString = formatString(L"%d\x1D34\n%2d\x1D39", rHour, rMin);
 	}
-	else if (10 < rMin) { // min
-		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
-			L"%d\x1D39", rMin);
+	else if (maxSec() / bigScaleDiv[maxSecIndex] / 60 <= rMin) { // min
+		knobTextString = formatString(L"%d\x1D39", rMin);
 	}
 	else if (0 < rMin) { // min, sec
-		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
-			L"%d\x1D39\n%02d", rMin, rSec);
+		knobTextString = formatString(L"%d\x1D39\n%02d", rMin, rSec);
 	}
 	else { // sec
-		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
-			L"%d", rSec);
+		knobTextString = formatString(L"%d", rSec);
 	}
+
+	SolidBrush fontBrush(Color((remainSec <= restartSec) ? remainFontColor : spareFontColor));
+	drawString(G, &remainTextFont, -0.02f, 90.0f, &remainTextFormat, &fontBrush,
+		L"%s", knobTextString.c_str());
 
 	SYSTEMTIME time;
 	GetLocalTime(&time);
-	drawString(G, &remainTextFont, -0.4f, 90.0f, &remainTextFormat, &remainTextBrush,
+	drawString(G, &remainTextFont, -0.5f, 90.0f, &remainTextFormat, &remainTextBrush,
 		L"%2d:%02d", time.wHour, time.wMinute);
 
 	G.Flush();

@@ -33,6 +33,7 @@ private:
 private:
 	void onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
 	void onDestroy(HWND hwnd);
+	UINT onDpiChanged(HWND hwnd, int x, int y, LPRECT rect);
 	void onLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags);
 	void onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags);
 	void onMouseMove(HWND hwnd, int x, int y, UINT keyFlags);
@@ -50,4 +51,5 @@ private:
 	bool captured_;
 	TimerRepeatMode repeatMode_;
 	uint64_t startTime_; // must be after repeatMode_
+	Zoom zoom_;
 };

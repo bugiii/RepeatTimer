@@ -27,7 +27,8 @@ TimerWindow::TimerWindow(const std::string& id) :
 	graph_(new TimerGraphic(id)),
 	captured_(false),
 	repeatMode_(TRM_ON_THE_HOUR),
-	startTime_(setupStartTime())
+	startTime_(setupStartTime()),
+	zoom_()
 {
 	if (!classAtom_) {
 		classAtom_ = registerClass();
@@ -37,6 +38,9 @@ TimerWindow::TimerWindow(const std::string& id) :
 	if (hwnd_) {
 		++windowCount_;
 	}
+
+	zoom_.index(3);
+	resizeAsZoom(hwnd_, zoom_);
 }
 
 TimerWindow::~TimerWindow()
@@ -110,6 +114,7 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 	{
 		HANDLE_MSG(hwnd, WM_COMMAND, onCommand);
 		HANDLE_MSG(hwnd, WM_DESTROY, onDestroy);
+		HANDLE_MSG(hwnd, WM_DPICHANGED, onDpiChanged);
 		HANDLE_MSG(hwnd, WM_LBUTTONDOWN, onLButtonDown);
 		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
 		HANDLE_MSG(hwnd, WM_MOUSEMOVE, onMouseMove);
@@ -153,7 +158,7 @@ void TimerWindow::processTime()
 	case TRM_RESTART_SPARE:
 		break;
 	case TRM_ON_THE_HOUR:
-		graph_->remainSec = graph_->maxSec() - modSec;
+		graph_->remainSec = graph_->maxSec() - static_cast<int>(modSec);
 		break;
 	}
 }
@@ -165,7 +170,6 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	// TODO: scale
 	// TODO: hidpi
 	// TODO: UI lock
-	// TODO: sticky
 	// TODO: multi timer
 	// TODO: multi timer sticky
 
@@ -179,6 +183,18 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	case ID_TIMERMENU_EXIT:
 		DestroyWindow(hwnd);
 		break;
+
+	case ID_SIZE_TINY:
+	case ID_SIZE_SMALL:
+	case ID_SIZE_NORMAL:
+	case ID_SIZE_BIG:
+	case ID_SIZE_HUGE: {
+		int pos = (zoom_.indexLast() - 1) - (ID_SIZE_HUGE - id);
+		zoom_.index(pos);
+		resizeAsZoom(hwnd, zoom_);
+		InvalidateRect(hwnd, NULL, FALSE);
+		break;
+	}
 
 	case ID_MAX_5:
 	case ID_MAX_10:
@@ -200,6 +216,14 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 void TimerWindow::onDestroy(HWND hwnd)
 {
 	delete this;
+}
+
+UINT TimerWindow::onDpiChanged(HWND hwnd, int x, int y, LPRECT rect)
+{
+	zoom_.dpi(getDpi(hwnd));
+	resizeAsZoom(hwnd, zoom_);
+	InvalidateRect(hwnd, NULL, FALSE);
+	return 0;
 }
 
 void TimerWindow::onLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
