@@ -63,14 +63,15 @@ GdiPlusInit::~GdiPlusInit() {
 ///////////////////////////////////////////////////////////////////////////////
 
 TimerGraphic::TimerGraphic(const std::string& id) :
-	remainSec(50 * 60), 
 	id_(id),
 	maxSecIndex(TM_60),
 	restartSec(restartDefaultSec[maxSecIndex]),
+	remainSec(restartDefaultSec[maxSecIndex]),
 	dialColor(128, 255, 255, 255),
 	remainPieColor(128, 255, 0, 0),
-	remainPieBegin(0.2f),
-	remainPieEnd(0.95f),
+	sparePieColor(128, 0, 255, 0),
+	pieBegin(0.2f),
+	pieEnd(0.95f),
 	scaleColor(128, 96, 96, 96),
 	smallScaleThickness(0.01f),
 	smallScaleBegin(0.95f),
@@ -82,8 +83,6 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	knobColor(128, 64, 64, 64),
 	knobEnd(0.15f)
 {
-	remainSec = restartDefaultSec[maxSecIndex]; // TODO:
-	//maxSec_ = timerMaxSec[maxSecIndex];
 }
 
 TimerGraphic::~TimerGraphic()
@@ -93,6 +92,12 @@ TimerGraphic::~TimerGraphic()
 int TimerGraphic::maxSec()
 {
 	return timerMaxSec[maxSecIndex];
+}
+
+void TimerGraphic::setMaxSecIndex(TimerMax value)
+{
+	maxSecIndex = value;
+	remainSec = restartDefaultSec[maxSecIndex];
 }
 
 bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
@@ -173,7 +178,7 @@ static void fillDonut(Graphics& G, Brush* brush, REAL r1, REAL r2, REAL s, REAL 
 static void drawString(Graphics& G, Font* font, REAL d, REAL r, StringFormat* format, Brush* brush, const wchar_t* fmt, ...)
 {
 	int size = 0;
-	wchar_t buffer[256] = L"";
+	wchar_t buffer[256] = L""; // TODO:
 
 	va_list args;
 	va_start(args, fmt);
@@ -226,6 +231,7 @@ void TimerGraphic::draw(HWND hwnd, HDC hdc)
 void TimerGraphic::draw(HDC hdc, int w, int h)
 {
 	Graphics G(hdc);
+	Matrix mx;
 
 	G.SetSmoothingMode(SmoothingModeAntiAlias); // TODO: option
 	G.SetTextRenderingHint(TextRenderingHintClearTypeGridFit); // TODO: option
@@ -236,10 +242,9 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	// scale (0,0)-(w, h) to (-1, 0)-(1,-1) & flip y coordinate
 	G.ScaleTransform(w / 2.0f, -h / 2.0f);
 	G.RotateTransform(90.0f); // top is 0 degree
-	//GraphicsState gs = G.Save();
 
-	// draw axis, arc
-	if (true) {
+	// draw axis, arc for debug
+	if (false) {
 		Matrix mx;
 		G.GetTransform(&mx);
 		Pen axisPen(Color::Black, 0.02f);
@@ -258,7 +263,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	fillCircle(G, &dialBrush, 1.0f);
 
 	// Scale, Index
-	// TODO: visible option (small?)
+	// TODO: visible option (small? index?)
 	Pen smallScalePen(scaleColor, smallScaleThickness);
 	Pen bigScalePen(scaleColor, bigScaleThickness);
 	SolidBrush indexTextBrush(Color::Black);
@@ -270,25 +275,39 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	REAL accrueDegree = 0.0f;
 	for (int bigIndex = 0; bigIndex < bigScaleDiv[maxSecIndex]; ++bigIndex) {
-		G.DrawLine(&bigScalePen, 0.0f, bigScaleBegin, 0.0f, bigScaleEnd);
+		G.DrawLine(&bigScalePen, bigScaleBegin, 0.0f, bigScaleEnd, 0.0f);
 
 		drawString(G, &indexTextFont, indexTextPos, -accrueDegree + 90, &indexTextFormat, &indexTextBrush,
 			L"%d", bigIndex * maxSec() / bigScaleDiv[maxSecIndex] / 60);
 
 		for (int smallIndex = 0; smallIndex < smallScaleDiv[maxSecIndex]; ++smallIndex) {
 			REAL degree = 360.0f / (bigScaleDiv[maxSecIndex] * smallScaleDiv[maxSecIndex]);
-			accrueDegree += degree;
-			G.RotateTransform(-degree);
-			if (smallScaleDiv[maxSecIndex] - 1 != smallIndex) {
-				G.DrawLine(&smallScalePen, 0.0f, smallScaleBegin, 0.0f, smallScaleEnd);
+			accrueDegree += degree; // for billboard text of index
+			G.RotateTransform(-degree); // rotate CW by small scale degree
+			if (smallScaleDiv[maxSecIndex] - 1 != smallIndex) { // not big scale
+				G.DrawLine(&smallScalePen, smallScaleBegin, 0.0f, smallScaleEnd, 0.0f);
 			}
 		}
 	}
 
-	// Remain Pie
+	// Pie
 	SolidBrush pieBrush(remainPieColor);
 	REAL remainDegree = -remainSec * 360.0f / maxSec();
-	fillDonut(G, &pieBrush, remainPieBegin, remainPieEnd, 0.0f, remainDegree);
+	fillDonut(G, &pieBrush, pieBegin, pieEnd, 0.0f, remainDegree);
+
+	if (restartSec < remainSec) {
+		SolidBrush pieBrush(sparePieColor);
+		REAL spareDegree = (maxSec() - remainSec) * 360.0f / maxSec();
+		REAL diffDegree = (remainSec - restartSec) * 360.0f / maxSec();
+		fillDonut(G, &pieBrush, pieBegin, pieEnd, spareDegree, diffDegree);
+	}
+
+	// Restart Line
+	Pen restartPen(remainPieColor, 0.01f);
+	G.GetTransform(&mx);
+	G.RotateTransform(-restartSec * 360.0f / maxSec());
+	G.DrawLine(&restartPen, pieBegin, 0.0f, pieEnd, 0.0f);
+	G.SetTransform(&mx);
 
 	// Knob
 	SolidBrush knobBrush(knobColor);
@@ -302,13 +321,32 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	remainTextFormat.SetAlignment(StringAlignmentCenter);
 	remainTextFormat.SetLineAlignment(StringAlignmentCenter);
 
-	{
-		Matrix mx;
-		G.GetTransform(&mx);
-		G.RotateTransform(-90.0f);
-		drawString(G, &remainTextFont, 0.0f, 0.0f, &remainTextFormat, &remainTextBrush, L"%d", remainSec / 60);
-		G.SetTransform(&mx);
+	int oSec = (remainSec <= restartSec) ? remainSec : (remainSec - restartSec);
+	int rHour = oSec / 60 / 60;
+	int rMin = oSec / 60 % 60;
+	int rSec = oSec % 60;
+
+	if (0 < rHour) { // hour, min
+		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
+			L"%d\x1D34\n%2d\x1D39", rHour, rMin);
 	}
+	else if (10 < rMin) { // min
+		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
+			L"%d\x1D39", rMin);
+	}
+	else if (0 < rMin) { // min, sec
+		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
+			L"%d\x1D39\n%02d", rMin, rSec);
+	}
+	else { // sec
+		drawString(G, &remainTextFont, 0.0f, 90.0f, &remainTextFormat, &remainTextBrush,
+			L"%d", rSec);
+	}
+
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	drawString(G, &remainTextFont, -0.4f, 90.0f, &remainTextFormat, &remainTextBrush,
+		L"%2d:%02d", time.wHour, time.wMinute);
 
 	G.Flush();
 }

@@ -64,18 +64,19 @@ public:
 	bool inKnob(HWND hwnd, int x, int y);
 	int secFromXY(HWND hwnd, int x, int y);
 	int maxSec();
+	void setMaxSecIndex(TimerMax value);
 
 private:
 	void draw(HDC hdc, int w, int h);
 
 public:
-	int remainSec;
 	const std::string& id_;
 	TimerMax maxSecIndex;
 	int restartSec;
+	int remainSec;
 	Gdiplus::Color dialColor;
-	Gdiplus::Color remainPieColor;
-	Gdiplus::REAL remainPieBegin, remainPieEnd;
+	Gdiplus::Color remainPieColor, sparePieColor;
+	Gdiplus::REAL pieBegin, pieEnd;
 	Gdiplus::Color scaleColor;
 	Gdiplus::REAL smallScaleThickness, smallScaleBegin, smallScaleEnd;
 	Gdiplus::REAL bigScaleThickness, bigScaleBegin, bigScaleEnd;
