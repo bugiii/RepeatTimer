@@ -62,7 +62,7 @@ public:
 public:
 	void draw(HWND hwnd, HDC hdc);
 	bool inKnob(HWND hwnd, int x, int y);
-	int remainSecFromXY(HWND hwnd, int x, int y);
+	int secFromXY(HWND hwnd, int x, int y);
 	int maxSec();
 
 private:
@@ -72,13 +72,14 @@ public:
 	int remainSec;
 	const std::string& id_;
 	TimerMax maxSecIndex;
-	int resetSec;
+	int restartSec;
 	Gdiplus::Color dialColor;
-	Gdiplus::Color pieColor;
-	Gdiplus::REAL pieBegin, pieEnd;
+	Gdiplus::Color remainPieColor;
+	Gdiplus::REAL remainPieBegin, remainPieEnd;
 	Gdiplus::Color scaleColor;
 	Gdiplus::REAL smallScaleThickness, smallScaleBegin, smallScaleEnd;
 	Gdiplus::REAL bigScaleThickness, bigScaleBegin, bigScaleEnd;
+	Gdiplus::REAL indexTextPos;
 	Gdiplus::Color knobColor;
 	Gdiplus::REAL knobEnd;
 

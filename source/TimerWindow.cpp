@@ -138,7 +138,9 @@ void TimerWindow::onLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT
 {
 	SetCapture(hwnd);
 	captured_ = true;
-	onMouseMove(hwnd, x, y, keyFlags);	
+	onMouseMove(hwnd, x, y, keyFlags);
+
+	// TODO: snap to big scale on near dial border.
 }
 
 void TimerWindow::onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
@@ -153,7 +155,9 @@ void TimerWindow::onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
 void TimerWindow::onMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 {
 	if (captured_) {
-		graph_->remainSecFromXY(hwnd, x, y);
+		int r = graph_->secFromXY(hwnd, x, y);
+		graph_->restartSec = r;
+		graph_->remainSec = r;
 		InvalidateRect(hwnd, NULL, 0);
 	}
 }
