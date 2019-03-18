@@ -65,6 +65,7 @@ public:
 	int secFromXY(HWND hwnd, int x, int y);
 	int maxSec();
 	void setMaxSecIndex(TimerMax value);
+	Gdiplus::REAL secToDegree(int sec);
 
 private:
 	void draw(HDC hdc, int w, int h);

@@ -158,7 +158,7 @@ void TimerWindow::processTime()
 	case TRM_RESTART_SPARE:
 		break;
 	case TRM_ON_THE_HOUR:
-		graph_->remainSec = graph_->maxSec() - static_cast<int>(modSec);
+		graph_->remainSec = graph_->maxSec() - static_cast<int>(modSec) - (graph_->maxSec() - graph_->restartSec);
 		break;
 	}
 }

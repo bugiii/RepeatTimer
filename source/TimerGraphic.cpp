@@ -106,6 +106,11 @@ void TimerGraphic::setMaxSecIndex(TimerMax value)
 	remainSec = restartDefaultSec[maxSecIndex];
 }
 
+Gdiplus::REAL TimerGraphic::secToDegree(int sec)
+{
+	return sec * 360.0f / maxSec();
+}
+
 bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
 {
 	RECT rect;
@@ -295,7 +300,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	SolidBrush indexTextBrush(Color::Black);
 	Font indexTextFont(L"Segoe UI", indexTextFontSize);
 	//Gdiplus::Font indexTextFont(L"Arial", fontSize, FontStyleBold, UnitWorld);
-	RectF indexTextRect(-knobEnd, -bigScaleBegin, 2*knobEnd, knobEnd);
+	RectF indexTextRect(-knobEnd, -bigScaleBegin, 2 * knobEnd, knobEnd);
 	StringFormat indexTextFormat;
 	indexTextFormat.SetAlignment(StringAlignmentCenter);
 	indexTextFormat.SetLineAlignment(StringAlignmentCenter);
@@ -318,26 +323,36 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	}
 
 	// Pie
-	SolidBrush pieBrush(remainPieColor);
-	REAL remainDegree = -remainSec * 360.0f / maxSec();
-	fillDonut(G, &pieBrush, pieBegin, pieEnd, 0.0f, remainDegree);
+	SolidBrush redPieBrush(remainPieColor);
+	SolidBrush faintRedBrush(faintColor(remainPieColor, faintDiv));
+	SolidBrush greenPieBrush(sparePieColor);
+	SolidBrush faintGreenBrush(faintColor(sparePieColor, faintDiv));
 
-	SolidBrush faintBrush(faintColor(remainPieColor, faintDiv));
-	REAL restartDegree = (maxSec() - restartSec) * 360.0f / maxSec();
-	REAL diffDegree = (remainSec - restartSec) * 360.0f / maxSec();
+	REAL remainDegree = secToDegree(remainSec);
+	REAL restartDegree = secToDegree(restartSec);
 
-	if (remainSec < restartSec) {
-		fillDonut(G, &faintBrush, pieBegin, pieEnd, restartDegree, -diffDegree);
+	// red pie
+	if (0 < remainSec && remainSec < restartSec) {
+		// 0 ~ remain CW
+		fillDonut(G, &redPieBrush, pieBegin, pieEnd, 0.0f, -remainDegree);
 	}
 
-	if (restartSec < remainSec) {
-		pieBrush.SetColor(sparePieColor);
-		REAL spareDegree = (maxSec() - remainSec) * 360.0f / maxSec();
-		fillDonut(G, &pieBrush, pieBegin, pieEnd, spareDegree, diffDegree);
+	// faint red pie
+	// restart ~ remain/0 CCW
+	REAL faintRedDiffDegree = (0 < remainSec) ? restartDegree - remainDegree : restartDegree;
+	fillDonut(G, &faintRedBrush, pieBegin, pieEnd, -restartDegree, faintRedDiffDegree);
+
+	// green pie
+	// restart ~ spare/0 CW
+	if (remainSec < 0) {
+		REAL greenDiffDegee = (360.0f - restartDegree) + remainDegree;
+		fillDonut(G, &greenPieBrush, pieBegin, pieEnd, -restartDegree, -greenDiffDegee);
 	}
 
-	faintBrush.SetColor(faintColor(sparePieColor, faintDiv));
-	fillDonut(G, &faintBrush, pieBegin, pieEnd, 0, restartDegree);
+	// faint green pie
+	// 0 ~ spare CCW
+	REAL spareDegree = (0 < remainSec) ? (360.0f - restartDegree) : -remainDegree;
+	fillDonut(G, &faintGreenBrush, pieBegin, pieEnd, 0.0f, spareDegree);
 
 	// Restart Line
 	Pen restartPen(blendColor(remainPieColor, sparePieColor), 0.01f);
@@ -358,7 +373,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	remainTextFormat.SetAlignment(StringAlignmentCenter);
 	remainTextFormat.SetLineAlignment(StringAlignmentCenter);
 
-	int oSec = (remainSec <= restartSec) ? remainSec : (remainSec - restartSec);
+	int oSec = (0 < remainSec) ? remainSec : (restartSec - remainSec);
 	int rHour = oSec / 60 / 60;
 	int rMin = oSec / 60 % 60;
 	int rSec = oSec % 60;
