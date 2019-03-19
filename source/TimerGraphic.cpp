@@ -178,12 +178,22 @@ static void fillCircle(Graphics& G, Brush* brush, REAL r)
 }
 
 // CCW s ~ e
-static void fillDonut(Graphics& G, Brush* brush, REAL r1, REAL r2, REAL s, REAL e)
+static void fillDonut(Graphics& G, Brush* brush, REAL r1, REAL r2, REAL s, REAL w)
 {
 	GraphicsPath gp(Gdiplus::FillModeAlternate);
 
-	gp.AddPie(-r2, -r2, 2*r2, 2*r2, s, e);
-	gp.AddPie(-r1, -r1, 2*r1, 2*r1, s, e);
+	gp.AddPie(-r2, -r2, 2 * r2, 2 * r2, s, w);
+	gp.AddPie(-r1, -r1, 2 * r1, 2 * r1, s, w);
+
+	G.FillPath(brush, &gp);
+}
+
+static void fillDonutCW(Graphics& G, Brush* brush, REAL r1, REAL r2, REAL s, REAL e)
+{
+	GraphicsPath gp(Gdiplus::FillModeAlternate);
+
+	gp.AddPie(-r2, -r2, 2 * r2, 2 * r2, -s, s - e);
+	gp.AddPie(-r1, -r1, 2 * r1, 2 * r1, -s, s - e);
 
 	G.FillPath(brush, &gp);
 }
@@ -333,32 +343,29 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	int spareSec = maxSec() - restartSec;
 	REAL remainDegree = secToDegree(remainSec);
 	REAL restartDegree = secToDegree(restartSec);
-	//REAL remainDegreeReverse = 360.0f - remainDegree;
-	REAL restartDegreeReverse = 360.0f - restartDegree;
 
-	if (TRM_ON_THE_HOUR == repeatMode) {
+	if (TRM_ON_THE_HOUR == repeatMode) { // remain <-- current min
 		// red pie
 		if (remainSec < restartSec) {
 			// 0 --> restart
-			fillDonut(G, &redPieBrush, pieBegin, pieEnd, restartDegreeReverse, 360.0f - remainDegree - restartDegreeReverse);
+			fillDonutCW(G, &redPieBrush, pieBegin, pieEnd, remainDegree, restartDegree);
 		}
 
 		// faint red pie
 		// 0 --> remain/restart
 		REAL faintRedDegree = (restartSec < remainSec) ? restartDegree : remainDegree;
-		fillDonut(G, &faintRedBrush, pieBegin, pieEnd, 0.0f, -faintRedDegree);
+		fillDonutCW(G, &faintRedBrush, pieBegin, pieEnd, 0.0f, faintRedDegree);
 
 		// green pie
 		if (restartSec < remainSec) {
-			// spare --> 0
-			REAL spareDegree = secToDegree(spareSec - (remainSec - restartSec));
-			fillDonut(G, &greenPieBrush, pieBegin, pieEnd, 0.0f, spareDegree);
+			// spare --> 360
+			fillDonutCW(G, &greenPieBrush, pieBegin, pieEnd, restartDegree, remainDegree);
 		}
 
 		// faint green pie
-		// restart --> spare
-		REAL spareDegree = (remainSec < restartSec) ? restartDegreeReverse : secToDegree(spareSec - (maxSec() - remainSec));
-		fillDonut(G, &faintGreenBrush, pieBegin, pieEnd, restartDegreeReverse, -spareDegree);
+		// restart/spare --> 360
+		REAL spareDegree = (remainSec < restartSec) ? restartDegree : remainDegree;
+		fillDonutCW(G, &faintGreenBrush, pieBegin, pieEnd, spareDegree, 360.0f);
 	}
 
 #if 0
