@@ -67,8 +67,8 @@ BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos)
 	// using current mouse x y
 	POINT p;
 	GetCursorPos(&p);
-	lpwpos->x = p.x - lpwpos->cx / 2;
-	lpwpos->y = p.y - lpwpos->cy / 2;
+	//lpwpos->x = p.x - lpwpos->cx / 2;
+	//lpwpos->y = p.y - lpwpos->cy / 2;
 
 	HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 	if (NULL != monitor) {

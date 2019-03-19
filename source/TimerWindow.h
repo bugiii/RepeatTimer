@@ -1,15 +1,7 @@
 #pragma once
 
 #include <string>
-
-class TimerGraphic;
-
-enum TimerRepeatMode {
-	TRM_NONE,
-	TRM_RESTART,
-	TRM_RESTART_SPARE,
-	TRM_ON_THE_HOUR
-};
+#include "TimerGraphic.h"
 
 class TimerWindow
 {
@@ -49,7 +41,6 @@ private:
 	HWND hwnd_;
 	TimerGraphic* graph_;
 	bool captured_;
-	TimerRepeatMode repeatMode_;
 	uint64_t startTime_; // must be after repeatMode_
 	Zoom zoom_;
 };

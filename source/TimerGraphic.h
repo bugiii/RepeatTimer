@@ -20,6 +20,13 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+enum TimerRepeatMode {
+	TRM_NONE,
+	TRM_RESTART,
+	TRM_RESTART_SPARE,
+	TRM_ON_THE_HOUR
+};
+
 enum TimerMax
 {
 	TM_5 = 0,
@@ -72,6 +79,7 @@ private:
 
 public:
 	const std::string& id_;
+	TimerRepeatMode repeatMode;
 	TimerMax maxSecIndex;
 	int restartSec;
 	int remainSec;

@@ -64,6 +64,7 @@ GdiPlusInit::~GdiPlusInit() {
 
 TimerGraphic::TimerGraphic(const std::string& id) :
 	id_(id),
+	repeatMode(TRM_ON_THE_HOUR),
 	maxSecIndex(TM_60),
 	restartSec(restartDefaultSec[maxSecIndex]),
 	remainSec(restartDefaultSec[maxSecIndex]),
@@ -75,8 +76,8 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	pieEnd(0.95f),
 	scaleColor(alpha, 96, 96, 96),
 	smallScaleThickness(0.01f),
-	smallScaleBegin(0.975f),
-	smallScaleEnd(1.0f),
+	smallScaleBegin(0.925f),
+	smallScaleEnd(0.975f),
 	bigScaleThickness(0.02f),
 	bigScaleBegin(0.90f),
 	bigScaleEnd(1.0f),
@@ -176,6 +177,7 @@ static void fillCircle(Graphics& G, Brush* brush, REAL r)
 	G.FillEllipse(brush, -r, -r, 2*r, 2*r);
 }
 
+// CCW s ~ e
 static void fillDonut(Graphics& G, Brush* brush, REAL r1, REAL r2, REAL s, REAL e)
 {
 	GraphicsPath gp(Gdiplus::FillModeAlternate);
@@ -328,17 +330,47 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	SolidBrush greenPieBrush(sparePieColor);
 	SolidBrush faintGreenBrush(faintColor(sparePieColor, faintDiv));
 
+	int spareSec = maxSec() - restartSec;
 	REAL remainDegree = secToDegree(remainSec);
 	REAL restartDegree = secToDegree(restartSec);
+	//REAL remainDegreeReverse = 360.0f - remainDegree;
+	REAL restartDegreeReverse = 360.0f - restartDegree;
 
-	// red pie
-	if (0 < remainSec && remainSec < restartSec) {
-		// 0 ~ remain CW
-		fillDonut(G, &redPieBrush, pieBegin, pieEnd, 0.0f, -remainDegree);
+	if (TRM_ON_THE_HOUR == repeatMode) {
+		// red pie
+		if (remainSec < restartSec) {
+			// 0 --> restart
+			fillDonut(G, &redPieBrush, pieBegin, pieEnd, restartDegreeReverse, 360.0f - remainDegree - restartDegreeReverse);
+		}
+
+		// faint red pie
+		// 0 --> remain/restart
+		REAL faintRedDegree = (restartSec < remainSec) ? restartDegree : remainDegree;
+		fillDonut(G, &faintRedBrush, pieBegin, pieEnd, 0.0f, -faintRedDegree);
+
+		// green pie
+		if (restartSec < remainSec) {
+			// spare --> 0
+			REAL spareDegree = secToDegree(spareSec - (remainSec - restartSec));
+			fillDonut(G, &greenPieBrush, pieBegin, pieEnd, 0.0f, spareDegree);
+		}
+
+		// faint green pie
+		// restart --> spare
+		REAL spareDegree = (remainSec < restartSec) ? restartDegreeReverse : secToDegree(spareSec - (maxSec() - remainSec));
+		fillDonut(G, &faintGreenBrush, pieBegin, pieEnd, restartDegreeReverse, -spareDegree);
 	}
 
+#if 0
+	// red pie
+	if (0 < remainSec && remainSec < restartSec) {
+		// 0 ~ remain
+		fillDonut(G, &redPieBrush, pieBegin, pieEnd, 1.0f, -remainDegree);
+	}
+
+
 	// faint red pie
-	// restart ~ remain/0 CCW
+	// remain/0 ~ restart
 	REAL faintRedDiffDegree = (0 < remainSec) ? restartDegree - remainDegree : restartDegree;
 	fillDonut(G, &faintRedBrush, pieBegin, pieEnd, -restartDegree, faintRedDiffDegree);
 
@@ -353,6 +385,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	// 0 ~ spare CCW
 	REAL spareDegree = (0 < remainSec) ? (360.0f - restartDegree) : -remainDegree;
 	fillDonut(G, &faintGreenBrush, pieBegin, pieEnd, 0.0f, spareDegree);
+#endif
 
 	// Restart Line
 	Pen restartPen(blendColor(remainPieColor, sparePieColor), 0.01f);
@@ -373,7 +406,14 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	remainTextFormat.SetAlignment(StringAlignmentCenter);
 	remainTextFormat.SetLineAlignment(StringAlignmentCenter);
 
-	int oSec = (0 < remainSec) ? remainSec : (restartSec - remainSec);
+	int oSec;
+
+	if (TRM_ON_THE_HOUR == repeatMode) {
+		oSec = (remainSec < restartSec) ? restartSec - remainSec : spareSec - (remainSec - restartSec);
+	}
+	else {
+		oSec = (0 < remainSec) ? remainSec : (restartSec - remainSec);
+	}
 	int rHour = oSec / 60 / 60;
 	int rMin = oSec / 60 % 60;
 	int rSec = oSec % 60;
@@ -400,6 +440,10 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	GetLocalTime(&time);
 	drawString(G, &remainTextFont, -0.5f, 90.0f, &remainTextFormat, &remainTextBrush,
 		L"%2d:%02d", time.wHour, time.wMinute);
+#if 0
+	drawString(G, &remainTextFont, -0.7f, 90.0f, &remainTextFormat, &remainTextBrush,
+		L"%3d %3d", remainSec / 60, restartSec / 60);
+#endif
 
 	G.Flush();
 }

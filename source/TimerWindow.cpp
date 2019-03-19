@@ -9,7 +9,7 @@ namespace bugiii_timer_window {
 	ATOM classAtom_ = 0;
 	int windowCount_ = 0;
 	const int timerPeriod = debug ? 100 : 1000;
-	const int timeDiv = debug ? 100 : 10000;
+	const int timeDiv = debug ? 10 : 10000;
 }
 
 using namespace bugiii_timer_window;
@@ -26,7 +26,6 @@ TimerWindow::TimerWindow(const std::string& id) :
 	hwnd_(0),
 	graph_(new TimerGraphic(id)),
 	captured_(false),
-	repeatMode_(TRM_ON_THE_HOUR),
 	startTime_(setupStartTime()),
 	zoom_()
 {
@@ -135,7 +134,7 @@ uint64_t TimerWindow::setupStartTime()
 {
 	uint64_t time = currentTime();
 
-	if (TRM_ON_THE_HOUR == repeatMode_) {
+	if (TRM_ON_THE_HOUR == graph_->repeatMode) {
 		//uint64_t maxTime = graph_->maxSec() * 1000ULL/*ms*/ / timeDiv;
 		//time = time / maxTime * maxTime; // nomalized to the max time
 		uint64_t maxTime = 60 * 60 * 1000ULL/*ms*/ / timeDiv; // one hour
@@ -147,18 +146,19 @@ uint64_t TimerWindow::setupStartTime()
 
 void TimerWindow::processTime()
 {
-	uint64_t diffSec = (currentTime() - graph_->restartSec) / 1000ULL/*ms*/ / timeDiv;
+	uint64_t diffSec = (currentTime() - graph_->restartSec) / 1000ULL/*ms*/ / timeDiv; //??? unit ???
 	uint64_t modSec = diffSec % graph_->maxSec();
 
-	switch (repeatMode_) {
+	switch (graph_->repeatMode) {
 	case TRM_NONE:
 		break;
 	case TRM_RESTART:
 		break;
 	case TRM_RESTART_SPARE:
+		graph_->remainSec = graph_->maxSec() - static_cast<int>(modSec) - (graph_->maxSec() - graph_->restartSec);
 		break;
 	case TRM_ON_THE_HOUR:
-		graph_->remainSec = graph_->maxSec() - static_cast<int>(modSec) - (graph_->maxSec() - graph_->restartSec);
+		graph_->remainSec = currentTime() / 1000ULL / timeDiv % graph_->maxSec();
 		break;
 	}
 }
