@@ -7,6 +7,10 @@ template<size_t SIZE, class T> inline size_t dimof(T(&arr)[SIZE]) {
 	return SIZE;
 }
 
+template<class T> inline T if3(T a, T b, T l, T e, T g) {
+	return (a < b) ?  l : (a == b) ? e : g;
+}
+
 int dprintf(const char *format, ...);
 std::wstring formatString(const wchar_t *format, ...);
 void displayMenu(HWND hwnd, int x, int y);

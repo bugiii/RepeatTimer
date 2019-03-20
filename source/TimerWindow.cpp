@@ -4,7 +4,7 @@
 #include "TimerGraphic.h"
 
 namespace bugiii_timer_window {
-	bool debug = false;
+	bool debug = true;
 	LPCWSTR className_ = L"TimerWindow_Class";
 	ATOM classAtom_ = 0;
 	int windowCount_ = 0;

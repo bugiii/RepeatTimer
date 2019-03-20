@@ -22,6 +22,9 @@ using namespace Gdiplus;
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace bugiii_timer_graph {
+	#define MOD_LETTER_H L"\x1D34"
+	#define MOD_LETTER_M L"\x1D39"
+
 	TimerMaxSec timerMaxSec[TM_MAX] = {
 		TMS_5, TMS_10, TMS_15, TMS_20, TMS_30, TMS_60, TMS_120, TMS_180, TMS_240, TMS_300
 	};
@@ -33,7 +36,7 @@ namespace bugiii_timer_graph {
 
 	const int smallScaleDiv[TM_MAX] = {
 		6, 6, 5, 5, 5,
-		5, 10, 5, 6, 10
+		5, 10, 5, 6, 6
 	};
 
 #define MAKETWOLESS(a) (timerMaxSec[(a)] * (bigScaleDiv[(a)]-2) / bigScaleDiv[(a)])
@@ -88,7 +91,7 @@ TimerGraphic::TimerGraphic(const std::string& id) :
 	fontSize(0.1f),
 	remainFontColor(alpha, 196, 32, 32),
 	spareFontColor(alpha, 32, 196, 32),
-	faintDiv(4.0f)
+	faintDiv(3.0f)
 {
 }
 
@@ -272,6 +275,8 @@ Color blendColor(const Color& a, const Color b)
 
 void TimerGraphic::draw(HDC hdc, int w, int h)
 {
+	int& currentSec = remainSec;
+
 	Graphics G(hdc);
 	Matrix mx;
 
@@ -321,8 +326,11 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	for (int bigIndex = 0; bigIndex < bigScaleDiv[maxSecIndex]; ++bigIndex) {
 		G.DrawLine(&bigScalePen, bigScaleBegin, 0.0f, bigScaleEnd, 0.0f);
 
+		int index = bigIndex * maxSec() / bigScaleDiv[maxSecIndex] / 60;
+		//std::wstring indexText = formatString((index % 60 || 0 == index) ? L"%d" : L"%d" MOD_LETTER_H, (index % 60) ? index : index / 60);
+		std::wstring indexText = formatString(L"%d", index);
 		drawString(G, &indexTextFont, indexTextPos, -accrueDegree + 90, &indexTextFormat, &indexTextBrush,
-			L"%d", bigIndex * maxSec() / bigScaleDiv[maxSecIndex] / 60);
+			L"%s", indexText.c_str());
 
 		for (int smallIndex = 0; smallIndex < smallScaleDiv[maxSecIndex]; ++smallIndex) {
 			REAL degree = 360.0f / (bigScaleDiv[maxSecIndex] * smallScaleDiv[maxSecIndex]);
@@ -342,30 +350,31 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	int spareSec = maxSec() - restartSec;
 	REAL remainDegree = secToDegree(remainSec);
+	REAL& currentDegree = remainDegree;
 	REAL restartDegree = secToDegree(restartSec);
 
-	if (TRM_ON_THE_HOUR == repeatMode) { // remain <-- current min
+	if (TRM_ON_THE_HOUR == repeatMode) { // remain <-- current
 		// red pie
-		if (remainSec < restartSec) {
+		if (currentSec < restartSec) {
 			// 0 --> restart
-			fillDonutCW(G, &redPieBrush, pieBegin, pieEnd, remainDegree, restartDegree);
+			fillDonutCW(G, &redPieBrush, pieBegin, pieEnd, currentDegree, restartDegree);
 		}
 
 		// faint red pie
 		// 0 --> remain/restart
-		REAL faintRedDegree = (restartSec < remainSec) ? restartDegree : remainDegree;
+		REAL faintRedDegree = (restartSec < currentSec) ? restartDegree : currentDegree;
 		fillDonutCW(G, &faintRedBrush, pieBegin, pieEnd, 0.0f, faintRedDegree);
 
 		// green pie
-		if (restartSec < remainSec) {
+		if (restartSec < currentSec) {
 			// spare --> 360
-			fillDonutCW(G, &greenPieBrush, pieBegin, pieEnd, restartDegree, remainDegree);
+			fillDonutCW(G, &greenPieBrush, pieBegin, pieEnd, currentDegree, 360.0f);
 		}
 
 		// faint green pie
 		// restart/spare --> 360
-		REAL spareDegree = (remainSec < restartSec) ? restartDegree : remainDegree;
-		fillDonutCW(G, &faintGreenBrush, pieBegin, pieEnd, spareDegree, 360.0f);
+		REAL spareDegree = (currentSec < restartSec) ? 360.0f : currentDegree;
+		fillDonutCW(G, &faintGreenBrush, pieBegin, pieEnd, restartDegree, spareDegree);
 	}
 
 #if 0
@@ -416,7 +425,7 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	int oSec;
 
 	if (TRM_ON_THE_HOUR == repeatMode) {
-		oSec = (remainSec < restartSec) ? restartSec - remainSec : spareSec - (remainSec - restartSec);
+		oSec = if3(currentSec, restartSec, restartSec - currentSec, currentSec, spareSec - (currentSec - restartSec));
 	}
 	else {
 		oSec = (0 < remainSec) ? remainSec : (restartSec - remainSec);
@@ -427,13 +436,13 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	std::wstring knobTextString;
 	if (0 < rHour) { // hour, min
-		knobTextString = formatString(L"%d\x1D34\n%2d\x1D39", rHour, rMin);
+		knobTextString = formatString(L"%d" MOD_LETTER_H "\n%2d" MOD_LETTER_M, rHour, rMin);
 	}
 	else if (maxSec() / bigScaleDiv[maxSecIndex] / 60 <= rMin) { // min
-		knobTextString = formatString(L"%d\x1D39", rMin);
+		knobTextString = formatString(L"%d" MOD_LETTER_M, rMin);
 	}
 	else if (0 < rMin) { // min, sec
-		knobTextString = formatString(L"%d\x1D39\n%02d", rMin, rSec);
+		knobTextString = formatString(L"%d" MOD_LETTER_M "\n%02d", rMin, rSec);
 	}
 	else { // sec
 		knobTextString = formatString(L"%d", rSec);
