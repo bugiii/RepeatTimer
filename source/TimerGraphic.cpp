@@ -356,23 +356,23 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	if (TRM_ON_THE_HOUR == repeatMode) { // remain <-- current
 		// red pie
 		if (currentSec < restartSec) {
-			// 0 --> restart
+			// current --> restart
 			fillDonutCW(G, &redPieBrush, pieBegin, pieEnd, currentDegree, restartDegree);
 		}
 
 		// faint red pie
-		// 0 --> remain/restart
+		// 0 ~ current --> restart
 		REAL faintRedDegree = (restartSec < currentSec) ? restartDegree : currentDegree;
 		fillDonutCW(G, &faintRedBrush, pieBegin, pieEnd, 0.0f, faintRedDegree);
 
 		// green pie
 		if (restartSec < currentSec) {
-			// spare --> 360
+			// current --> 360
 			fillDonutCW(G, &greenPieBrush, pieBegin, pieEnd, currentDegree, 360.0f);
 		}
 
 		// faint green pie
-		// restart/spare --> 360
+		// restart ~ current --> 360
 		REAL spareDegree = (currentSec < restartSec) ? 360.0f : currentDegree;
 		fillDonutCW(G, &faintGreenBrush, pieBegin, pieEnd, restartDegree, spareDegree);
 	}

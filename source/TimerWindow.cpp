@@ -24,6 +24,7 @@ static HINSTANCE defaultInstance()
 TimerWindow::TimerWindow(const std::string& id) :
 	id_(id),
 	hwnd_(0),
+	menu_(LoadMenu(NULL, MAKEINTRESOURCE(IDC_TIMER_MENU))),
 	movingWindow_(false),
 	graph_(new TimerGraphic(id)),
 	captured_(false),
@@ -46,6 +47,7 @@ TimerWindow::TimerWindow(const std::string& id) :
 TimerWindow::~TimerWindow()
 {
 	delete graph_;
+	DestroyMenu(menu_);
 
 	if (hwnd_) {
 		--windowCount_;
@@ -165,6 +167,27 @@ void TimerWindow::processTime()
 	}
 }
 
+void TimerWindow::displayMenu(HWND hwnd, int x, int y)
+{
+	MENUITEMINFO mii;
+	mii.cbSize = sizeof(MENUITEMINFO);
+	mii.fMask = MIIM_STATE;
+	mii.fType = MFT_RADIOCHECK;
+
+	for (int i = 0; i < zoom_.indexLast(); ++i) {
+		mii.fState = (i == zoom_.index()) ? MFS_CHECKED : MFS_UNCHECKED;
+		SetMenuItemInfo(menu_, i + ID_SIZE_TINY, FALSE, &mii);
+	}
+
+	for (int i = 0; i < TM_MAX; ++i) {
+		mii.fState = (i == graph_->maxSecIndex) ? MFS_CHECKED : MFS_UNCHECKED;
+		SetMenuItemInfo(menu_, i + ID_MAX_5, FALSE, &mii);
+	}
+
+	HMENU popup = GetSubMenu(menu_, 0);
+	TrackPopupMenuEx(popup, TPM_LEFTALIGN, x, y, hwnd, NULL);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
@@ -191,7 +214,7 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	case ID_SIZE_NORMAL:
 	case ID_SIZE_BIG:
 	case ID_SIZE_HUGE: {
-		int pos = (zoom_.indexLast() - 1) - (ID_SIZE_HUGE - id);
+		int pos = id - ID_SIZE_TINY;
 		zoom_.index(pos);
 		resizeAsZoom(hwnd, zoom_);
 		InvalidateRect(hwnd, NULL, FALSE);
@@ -307,9 +330,7 @@ void TimerWindow::onTimer(HWND hwnd, UINT id)
 BOOL TimerWindow::onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos)
 {
 	// TODO: 0 x 0 ?
-	static bool first = true; // prevent from side effect of locating pos. by mouse cursor xy
-	if (first || (0 == lpwpos->x && 0 == lpwpos->y && 0 == lpwpos->cx && 0 == lpwpos->cy)) {
-		first = false;
+	if (0 == lpwpos->x && 0 == lpwpos->y && 0 == lpwpos->cx && 0 == lpwpos->cy) {
 		return TRUE;
 	}
 	return stickSide(hwnd, lpwpos, movingWindow_);

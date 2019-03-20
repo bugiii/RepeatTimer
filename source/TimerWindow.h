@@ -21,6 +21,7 @@ private:
 	LRESULT windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	uint64_t setupStartTime();
 	void processTime();
+	void displayMenu(HWND hwnd, int x, int y);
 
 private:
 	void onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
@@ -40,6 +41,7 @@ private:
 private:
 	std::string id_;
 	HWND hwnd_;
+	HMENU menu_;
 	bool movingWindow_;
 	TimerGraphic* graph_;
 	bool captured_;

@@ -13,7 +13,6 @@ template<class T> inline T if3(T a, T b, T l, T e, T g) {
 
 int dprintf(const char *format, ...);
 std::wstring formatString(const wchar_t *format, ...);
-void displayMenu(HWND hwnd, int x, int y);
 uint64_t currentTime();
 BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos, bool moving);
 void resizeAsZoom(HWND hwnd, const Zoom& zoom);

@@ -6,6 +6,8 @@
 #include <cstdarg>
 #include <string>
 
+#pragma comment(lib, "shcore")
+
 int dprintf(const char *format, ...)
 {
 	char str[1024];
@@ -38,19 +40,6 @@ RECT getRect(HWND hwnd)
 	RECT rect;
 	GetWindowRect(hwnd, &rect);
 	return rect;
-}
-
-void displayMenu(HWND hwnd, int x, int y)
-{
-	HMENU menu = LoadMenu(NULL, MAKEINTRESOURCE(IDC_TIMER_MENU));
-
-	// TODO: check menu item
-
-	HMENU popup = GetSubMenu(menu, 0);
-
-	TrackPopupMenuEx(popup, TPM_LEFTALIGN, x, y, hwnd, NULL);
-
-	DestroyMenu(menu);
 }
 
 uint64_t currentTime()
@@ -142,8 +131,6 @@ void resizeAsZoom(HWND hwnd, const Zoom& zoom) // TODO: invalidate param
 		}
 	}
 }
-
-#pragma comment(lib, "shcore")
 
 UINT getDpi(HWND hwnd)
 {
