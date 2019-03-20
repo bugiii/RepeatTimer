@@ -24,6 +24,7 @@ static HINSTANCE defaultInstance()
 TimerWindow::TimerWindow(const std::string& id) :
 	id_(id),
 	hwnd_(0),
+	movingWindow_(false),
 	graph_(new TimerGraphic(id)),
 	captured_(false),
 	startTime_(setupStartTime()),
@@ -118,6 +119,7 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
 		HANDLE_MSG(hwnd, WM_MOUSEMOVE, onMouseMove);
 		HANDLE_MSG(hwnd, WM_NCHITTEST, onNCHitTest);
+		HANDLE_MSG(hwnd, WM_NCLBUTTONUP, onNCLButtonUp);
 		HANDLE_MSG(hwnd, WM_NCRBUTTONDOWN, onNCRButtonDown);
 		HANDLE_MSG(hwnd, WM_PAINT, onPaint);
 		HANDLE_MSG(hwnd, WM_RBUTTONDOWN, onRButtonDown);
@@ -258,7 +260,18 @@ void TimerWindow::onMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 
 UINT TimerWindow::onNCHitTest(HWND hwnd, int x, int y)
 {
+	if (graph_->inKnob(hwnd, x, y)) {
+		movingWindow_ = true;
+		return HTCAPTION;
+	}
+
+	return HTCLIENT;
 	return graph_->inKnob(hwnd, x, y) ? HTCAPTION : HTCLIENT;
+}
+
+void TimerWindow::onNCLButtonUp(HWND hwnd, int x, int y, UINT codeHitTest)
+{
+	movingWindow_ = false;
 }
 
 void TimerWindow::onNCRButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT codeHitTest)
@@ -299,5 +312,5 @@ BOOL TimerWindow::onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos)
 		first = false;
 		return TRUE;
 	}
-	return stickSide(hwnd, lpwpos);
+	return stickSide(hwnd, lpwpos, movingWindow_);
 }

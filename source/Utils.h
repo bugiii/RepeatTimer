@@ -11,8 +11,8 @@ int dprintf(const char *format, ...);
 std::wstring formatString(const wchar_t *format, ...);
 void displayMenu(HWND hwnd, int x, int y);
 uint64_t currentTime();
-BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos);
-void resizeAsZoom(HWND hwnd, const Zoom & zoom);
+BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos, bool moving);
+void resizeAsZoom(HWND hwnd, const Zoom& zoom);
 UINT getDpi(HWND hwnd);
 
 /* void Cls_OnDpiChanged(HWND hwnd, int x, int y, LPRECT rect) */

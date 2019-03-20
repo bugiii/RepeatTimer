@@ -62,15 +62,17 @@ uint64_t currentTime()
 	return *reinterpret_cast<uint64_t*>(&fileTime);
 }
 
-BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos)
+BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos, bool moving)
 {
-	// using current mouse x y
-	POINT p;
-	GetCursorPos(&p);
-	//lpwpos->x = p.x - lpwpos->cx / 2;
-	//lpwpos->y = p.y - lpwpos->cy / 2;
+	if (moving) {
+		// using current mouse x y
+		POINT p;
+		GetCursorPos(&p);
+		lpwpos->x = p.x - lpwpos->cx / 2;
+		lpwpos->y = p.y - lpwpos->cy / 2;
+	}
 
-	HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+	HMONITOR monitor = MonitorFromWindow(hwnd, NULL);
 	if (NULL != monitor) {
 		MONITORINFOEX mi;
 		mi.cbSize = sizeof MONITORINFOEX;
@@ -102,7 +104,7 @@ BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos)
 	return TRUE;
 }
 
-void resizeAsZoom(HWND hwnd, const Zoom & zoom) // TODO: invalidate param
+void resizeAsZoom(HWND hwnd, const Zoom& zoom) // TODO: invalidate param
 {
 	RECT wrect = getRect(hwnd);
 

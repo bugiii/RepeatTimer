@@ -30,6 +30,7 @@ private:
 	void onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags);
 	void onMouseMove(HWND hwnd, int x, int y, UINT keyFlags);
 	UINT onNCHitTest(HWND hwnd, int x, int y);
+	void onNCLButtonUp(HWND hwnd, int x, int y, UINT codeHitTest);
 	void onNCRButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT codeHitTest);
 	void onPaint(HWND hwnd);
 	void onRButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags);
@@ -39,6 +40,7 @@ private:
 private:
 	std::string id_;
 	HWND hwnd_;
+	bool movingWindow_;
 	TimerGraphic* graph_;
 	bool captured_;
 	uint64_t startTime_; // must be after repeatMode_
