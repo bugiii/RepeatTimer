@@ -19,7 +19,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     GdiPlusInit gdiplus;
 
-    TimerWindow* test = new TimerWindow("Timer 0");
+    TimerWindow* test = new TimerWindow(L"Timer 0");
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_REPEATTIMER));
 

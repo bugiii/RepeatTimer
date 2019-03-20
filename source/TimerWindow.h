@@ -6,7 +6,7 @@
 class TimerWindow
 {
 public:
-	TimerWindow(const std::string& id);
+	TimerWindow(const std::wstring& id);
 	HWND hwnd() { return hwnd_; }
 
 private:
@@ -39,7 +39,7 @@ private:
 	BOOL onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos);
 
 private:
-	std::string id_;
+	std::wstring id_;
 	HWND hwnd_;
 	HMENU menu_;
 	bool movingWindow_;

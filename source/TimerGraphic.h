@@ -61,7 +61,7 @@ enum TimerMaxSec
 class TimerGraphic
 {
 public:
-	TimerGraphic(const std::string& id);
+	TimerGraphic(const std::wstring& id);
 	~TimerGraphic();
 	static void init();
 	static void fini();
@@ -78,7 +78,7 @@ private:
 	void draw(HDC hdc, int w, int h);
 
 public:
-	const std::string& id_;
+	const std::wstring& id_;
 	TimerRepeatMode repeatMode;
 	TimerMax maxSecIndex;
 	int restartSec;

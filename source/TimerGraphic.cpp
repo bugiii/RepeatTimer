@@ -65,7 +65,7 @@ GdiPlusInit::~GdiPlusInit() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-TimerGraphic::TimerGraphic(const std::string& id) :
+TimerGraphic::TimerGraphic(const std::wstring& id) :
 	id_(id),
 	repeatMode(TRM_ON_THE_HOUR),
 	maxSecIndex(TM_60),

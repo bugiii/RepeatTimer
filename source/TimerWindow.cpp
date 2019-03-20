@@ -21,7 +21,7 @@ static HINSTANCE defaultInstance()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-TimerWindow::TimerWindow(const std::string& id) :
+TimerWindow::TimerWindow(const std::wstring& id) :
 	id_(id),
 	hwnd_(0),
 	menu_(LoadMenu(NULL, MAKEINTRESOURCE(IDC_TIMER_MENU))),
@@ -82,7 +82,7 @@ ATOM TimerWindow::registerClass()
 HWND TimerWindow::createWindow()
 {
 	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_LAYERED,
-		MAKEINTATOM(classAtom_), L"", WS_POPUP,
+		MAKEINTATOM(classAtom_), id_.c_str(), WS_POPUP,
 		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), nullptr);
 
 	if (!hwnd) {
