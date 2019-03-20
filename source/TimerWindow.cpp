@@ -65,7 +65,7 @@ ATOM TimerWindow::registerClass()
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc = staticWindowProc;
 	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = sizeof(TimerWindow*); // for saving this pointer of each instance
+	wcex.cbWndExtra = 0;
 	wcex.hInstance = defaultInstance();
 	wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_REPEATTIMER));
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
