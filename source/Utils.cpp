@@ -24,7 +24,7 @@ int dprintf(const char *format, ...)
 
 std::wstring formatString(const wchar_t *format, ...)
 {
-	wchar_t buffer[256] = L""; // TODO:
+	wchar_t buffer[256]; // TODO:
 
 	va_list args;
 	va_start(args, format);

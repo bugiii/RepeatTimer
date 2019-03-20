@@ -25,7 +25,6 @@ TimerWindow::TimerWindow(const std::wstring& id) :
 	id_(id),
 	hwnd_(0),
 	menu_(LoadMenu(NULL, MAKEINTRESOURCE(IDC_TIMER_MENU))),
-	movingWindow_(false),
 	graph_(new TimerGraphic(id)),
 	captured_(false),
 	startTime_(setupStartTime()),
@@ -38,10 +37,9 @@ TimerWindow::TimerWindow(const std::wstring& id) :
 	hwnd_ = createWindow();
 	if (hwnd_) {
 		++windowCount_;
+		zoom_.index(3);
+		resizeAsZoom(hwnd_, zoom_);
 	}
-
-	zoom_.index(3);
-	resizeAsZoom(hwnd_, zoom_);
 }
 
 TimerWindow::~TimerWindow()
@@ -70,9 +68,9 @@ ATOM TimerWindow::registerClass()
 	wcex.cbWndExtra = sizeof(TimerWindow*); // for saving this pointer of each instance
 	wcex.hInstance = defaultInstance();
 	wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_REPEATTIMER));
-	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = NULL; // don't erase backgroud
-	wcex.lpszMenuName = NULL; // no menu bar
+	wcex.lpszMenuName = nullptr; // no menu bar
 	wcex.lpszClassName = className_;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -83,20 +81,17 @@ HWND TimerWindow::createWindow()
 {
 	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_LAYERED,
 		MAKEINTATOM(classAtom_), id_.c_str(), WS_POPUP,
-		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), nullptr);
+		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), this);
 
 	if (!hwnd) {
 		return 0;
 	}
 
-	// save this pointer
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 	UpdateWindow(hwnd);
-	InvalidateRect(hwnd, NULL, FALSE);
+	InvalidateRect(hwnd, nullptr, FALSE);
 
-	SetTimer(hwnd, 1, timerPeriod, NULL);
+	SetTimer(hwnd, 1, timerPeriod, nullptr);
 
 	return hwnd;
 }
@@ -105,6 +100,11 @@ HWND TimerWindow::createWindow()
 
 LRESULT CALLBACK TimerWindow::staticWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (WM_NCCREATE == msg) { // first msg
+		// save this pointer
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
+	}
+
 	// retreive this pointer
 	TimerWindow* tw = reinterpret_cast<TimerWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 	return tw->windowProc(hwnd, msg, wParam, lParam);
@@ -121,15 +121,14 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
 		HANDLE_MSG(hwnd, WM_MOUSEMOVE, onMouseMove);
 		HANDLE_MSG(hwnd, WM_NCHITTEST, onNCHitTest);
-		HANDLE_MSG(hwnd, WM_NCLBUTTONUP, onNCLButtonUp);
 		HANDLE_MSG(hwnd, WM_NCRBUTTONDOWN, onNCRButtonDown);
 		HANDLE_MSG(hwnd, WM_PAINT, onPaint);
 		HANDLE_MSG(hwnd, WM_RBUTTONDOWN, onRButtonDown);
 		HANDLE_MSG(hwnd, WM_TIMER, onTimer);
 		HANDLE_MSG(hwnd, WM_WINDOWPOSCHANGING, onWindowPosChanging);
-
-	default: return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
+
+	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -185,7 +184,7 @@ void TimerWindow::displayMenu(HWND hwnd, int x, int y)
 	}
 
 	HMENU popup = GetSubMenu(menu_, 0);
-	TrackPopupMenuEx(popup, TPM_LEFTALIGN, x, y, hwnd, NULL);
+	TrackPopupMenuEx(popup, TPM_LEFTALIGN, x, y, hwnd, nullptr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -217,7 +216,7 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 		int pos = id - ID_SIZE_TINY;
 		zoom_.index(pos);
 		resizeAsZoom(hwnd, zoom_);
-		InvalidateRect(hwnd, NULL, FALSE);
+		InvalidateRect(hwnd, nullptr, FALSE);
 		break;
 	}
 
@@ -233,7 +232,7 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	case ID_MAX_300:
 		int secIndex = id - ID_MAX_5;
 		graph_->setMaxSecIndex(static_cast<TimerMax>(secIndex));
-		InvalidateRect(hwnd, NULL, 0);
+		InvalidateRect(hwnd, nullptr, FALSE);
 		break;
 	}
 }
@@ -247,7 +246,7 @@ UINT TimerWindow::onDpiChanged(HWND hwnd, int x, int y, LPRECT rect)
 {
 	zoom_.dpi(getDpi(hwnd));
 	resizeAsZoom(hwnd, zoom_);
-	InvalidateRect(hwnd, NULL, FALSE);
+	InvalidateRect(hwnd, nullptr, FALSE);
 	return 0;
 }
 
@@ -267,7 +266,7 @@ void TimerWindow::onLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
 		ReleaseCapture();
 		onMouseMove(hwnd, x, y, keyFlags);
 		processTime();
-		InvalidateRect(hwnd, NULL, 0);
+		InvalidateRect(hwnd, nullptr, FALSE);
 	}
 }
 
@@ -277,24 +276,14 @@ void TimerWindow::onMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 		int r = graph_->secFromXY(hwnd, x, y);
 		graph_->restartSec = r;
 		graph_->remainSec = r;
-		InvalidateRect(hwnd, NULL, 0);
+		InvalidateRect(hwnd, nullptr, FALSE);
 	}
 }
 
 UINT TimerWindow::onNCHitTest(HWND hwnd, int x, int y)
 {
-	if (graph_->inKnob(hwnd, x, y)) {
-		movingWindow_ = true;
-		return HTCAPTION;
-	}
 
-	return HTCLIENT;
 	return graph_->inKnob(hwnd, x, y) ? HTCAPTION : HTCLIENT;
-}
-
-void TimerWindow::onNCLButtonUp(HWND hwnd, int x, int y, UINT codeHitTest)
-{
-	movingWindow_ = false;
 }
 
 void TimerWindow::onNCRButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT codeHitTest)
@@ -324,7 +313,7 @@ void TimerWindow::onTimer(HWND hwnd, UINT id)
 	}
 
 	processTime();
-	InvalidateRect(hwnd, NULL, 0);
+	InvalidateRect(hwnd, nullptr, FALSE);
 }
 
 BOOL TimerWindow::onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos)
@@ -333,5 +322,6 @@ BOOL TimerWindow::onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos)
 	if (0 == lpwpos->x && 0 == lpwpos->y && 0 == lpwpos->cx && 0 == lpwpos->cy) {
 		return TRUE;
 	}
-	return stickSide(hwnd, lpwpos, movingWindow_);
+
+	return stickSide(hwnd, lpwpos, GetCapture() != NULL);
 }

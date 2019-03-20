@@ -52,12 +52,14 @@ using namespace bugiii_timer_graph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GdiPlusInit::GdiPlusInit() {
+GdiPlusInit::GdiPlusInit()
+{
 	Gdiplus::GdiplusStartupInput startupInput;
-	Gdiplus::GdiplusStartup(&token_, &startupInput, NULL);
+	Gdiplus::GdiplusStartup(&token_, &startupInput, nullptr);
 }
 
-GdiPlusInit::~GdiPlusInit() {
+GdiPlusInit::~GdiPlusInit()
+{
 	if (token_) {
 		Gdiplus::GdiplusShutdown(token_);
 	}
@@ -125,7 +127,7 @@ bool TimerGraphic::inKnob(HWND hwnd, int x, int y)
 	y = (rect.bottom - rect.top) / 2 - y + rect.top;
 	float r = knobEnd * (rect.right - rect.left) / 2;
 
-	return 0 <= r * r - (x*x + y * y);
+	return 0 <= r * r - (x * x + y * y);
 }
 
 int TimerGraphic::secFromXY(HWND hwnd, int x, int y)

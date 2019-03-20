@@ -18,6 +18,9 @@ BOOL stickSide(HWND hwnd, LPWINDOWPOS lpwpos, bool moving);
 void resizeAsZoom(HWND hwnd, const Zoom& zoom);
 UINT getDpi(HWND hwnd);
 
+#define HANDLE_MSG_BREAK(hwnd, message, fn)    \
+    case (message): HANDLE_##message((hwnd), (wParam), (lParam), (fn)); break
+
 /* void Cls_OnDpiChanged(HWND hwnd, int x, int y, LPRECT rect) */
 #define HANDLE_WM_DPICHANGED(hwnd, wParam, lParam, fn) \
     (LRESULT)(DWORD)(UINT)((fn)((hwnd), LOWORD(wParam), HIWORD(wParam), (LPRECT)(lParam)))
