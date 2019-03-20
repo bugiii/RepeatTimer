@@ -4,7 +4,7 @@
 #include "TimerGraphic.h"
 
 namespace bugiii_timer_window {
-	bool debug = true;
+	bool debug = false;
 	LPCWSTR className_ = L"TimerWindow_Class";
 	ATOM classAtom_ = 0;
 	int windowCount_ = 0;
@@ -81,7 +81,8 @@ HWND TimerWindow::createWindow()
 {
 	HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_APPWINDOW | WS_EX_LAYERED,
 		MAKEINTATOM(classAtom_), id_.c_str(), WS_POPUP,
-		0, 0, 500, 500, nullptr, nullptr, defaultInstance(), this);
+		0, 0, 500, 500, nullptr, nullptr, defaultInstance(),
+		this); // pass this pointer to WM_NCCREATE
 
 	if (!hwnd) {
 		return 0;
@@ -101,21 +102,26 @@ HWND TimerWindow::createWindow()
 LRESULT CALLBACK TimerWindow::staticWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (WM_NCCREATE == msg) { // first msg
-		// save this pointer
+		// save this pointer of new window
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((CREATESTRUCT*)lParam)->lpCreateParams);
 	}
 
 	// retreive this pointer
 	TimerWindow* tw = reinterpret_cast<TimerWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-	return tw->windowProc(hwnd, msg, wParam, lParam);
+	LRESULT r = tw ? tw->windowProc(hwnd, msg, wParam, lParam) : 0;
+
+	if (WM_NCDESTROY == msg) { // last msg
+		delete tw;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+	}
+
+	return r;
 }
 
 LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	switch (msg)
-	{
+	switch (msg) {
 		HANDLE_MSG(hwnd, WM_COMMAND, onCommand);
-		HANDLE_MSG(hwnd, WM_DESTROY, onDestroy);
 		HANDLE_MSG(hwnd, WM_DPICHANGED, onDpiChanged);
 		HANDLE_MSG(hwnd, WM_LBUTTONDOWN, onLButtonDown);
 		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
@@ -197,6 +203,8 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	// TODO: multi timer
 	// TODO: multi timer sticky
 
+	int index;
+
 	switch (id)
 	{
 	case IDM_ABOUT:
@@ -212,14 +220,13 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	case ID_SIZE_SMALL:
 	case ID_SIZE_NORMAL:
 	case ID_SIZE_BIG:
-	case ID_SIZE_HUGE: {
-		int pos = id - ID_SIZE_TINY;
-		zoom_.index(pos);
+	case ID_SIZE_HUGE:
+		index = id - ID_SIZE_TINY;
+		zoom_.index(index);
 		resizeAsZoom(hwnd, zoom_);
 		InvalidateRect(hwnd, nullptr, FALSE);
 		break;
-	}
-
+	
 	case ID_MAX_5:
 	case ID_MAX_10:
 	case ID_MAX_15:
@@ -230,16 +237,11 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	case ID_MAX_180:
 	case ID_MAX_240:
 	case ID_MAX_300:
-		int secIndex = id - ID_MAX_5;
-		graph_->setMaxSecIndex(static_cast<TimerMax>(secIndex));
+		index = id - ID_MAX_5;
+		graph_->setMaxSecIndex(static_cast<TimerMax>(index));
 		InvalidateRect(hwnd, nullptr, FALSE);
 		break;
 	}
-}
-
-void TimerWindow::onDestroy(HWND hwnd)
-{
-	delete this;
 }
 
 UINT TimerWindow::onDpiChanged(HWND hwnd, int x, int y, LPRECT rect)
