@@ -113,7 +113,7 @@ LRESULT CALLBACK TimerWindow::staticWindowProc(HWND hwnd, UINT msg, WPARAM wPara
 
 	if (WM_NCDESTROY == msg) { // assume last msg
 		delete tw;
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
 	}
 
 	return r;
