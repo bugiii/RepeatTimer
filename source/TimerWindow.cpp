@@ -216,7 +216,7 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 
 	case ID_TIMERMENU_EXIT:
 		DestroyWindow(hwnd);
-		// Do not reference a class member after calling DestroyWindow.
+		// Do not refer a class member after calling DestroyWindow.
 		break;
 
 	case ID_SIZE_TINY:
@@ -328,5 +328,8 @@ BOOL TimerWindow::onWindowPosChanging(HWND hwnd, LPWINDOWPOS lpwpos)
 		return TRUE;
 	}
 
-	return stickSide(hwnd, lpwpos, GetCapture() != NULL);
+	// It determines whether the window is moving after the mouse is captured
+	// in HTCAPTION state.
+	bool moving = GetCapture() != NULL;
+	return stickSide(hwnd, lpwpos, moving);
 }
