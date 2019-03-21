@@ -108,9 +108,11 @@ LRESULT CALLBACK TimerWindow::staticWindowProc(HWND hwnd, UINT msg, WPARAM wPara
 
 	// retreive this pointer
 	TimerWindow* tw = reinterpret_cast<TimerWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+	// if this pointer is invalid, windowProc is not called.
 	LRESULT r = tw ? tw->windowProc(hwnd, msg, wParam, lParam) : 0;
 
-	if (WM_NCDESTROY == msg) { // last msg
+	if (WM_NCDESTROY == msg) { // assume last msg
 		delete tw;
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
 	}
@@ -214,6 +216,7 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 
 	case ID_TIMERMENU_EXIT:
 		DestroyWindow(hwnd);
+		// Do not reference a class member after calling DestroyWindow.
 		break;
 
 	case ID_SIZE_TINY:
