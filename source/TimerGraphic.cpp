@@ -179,7 +179,18 @@ int TimerGraphic::secFromXY(HWND hwnd, int x, int y)
 
 static void fillCircle(Graphics& G, Brush* brush, REAL r)
 {
-	G.FillEllipse(brush, -r, -r, 2*r, 2*r);
+	G.FillEllipse(brush, -r, -r, 2 * r, 2 * r);
+}
+
+// CCW
+static void fillCircle(Graphics& G, Brush* brush, REAL d, REAL t, REAL r)
+{
+	Matrix mx;
+	G.GetTransform(&mx);
+	G.RotateTransform(t - 90.0f);
+	G.TranslateTransform(0.0f, d);
+	G.FillEllipse(brush, -r, -r, 2 * r, 2 * r);
+	G.SetTransform(&mx);
 }
 
 // CCW s ~ e
@@ -295,7 +306,6 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	// draw axis, arc for debug
 	if (false) {
-		Matrix mx;
 		G.GetTransform(&mx);
 		Pen axisPen(Color::Black, 0.02f);
 		axisPen.SetStartCap(LineCapNoAnchor);
@@ -314,8 +324,11 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 
 	// Scale, Index
 	// TODO: visible option (small? index?)
+	REAL scaleFactor = 2.5f;
 	Pen smallScalePen(scaleColor, smallScaleThickness);
 	Pen bigScalePen(scaleColor, bigScaleThickness);
+	Pen smallScaleBoldPen(scaleColor, smallScaleThickness * scaleFactor);
+	Pen bigScaleBoldPen(scaleColor, bigScaleThickness * scaleFactor);
 	SolidBrush indexTextBrush(Color::Black);
 	Font indexTextFont(L"Segoe UI", indexTextFontSize);
 	//Gdiplus::Font indexTextFont(L"Arial", fontSize, FontStyleBold, UnitWorld);
@@ -325,8 +338,12 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 	indexTextFormat.SetLineAlignment(StringAlignmentCenter);
 
 	REAL accrueDegree = 0.0f;
+	int scaleCount = 0;
+	auto scaleBold = [this, &scaleCount]() -> bool {
+		return (TRM_ON_THE_HOUR == repeatMode) && (scaleCount == remainSec % 60);
+	};
 	for (int bigIndex = 0; bigIndex < bigScaleDiv[maxSecIndex]; ++bigIndex) {
-		G.DrawLine(&bigScalePen, bigScaleBegin, 0.0f, bigScaleEnd, 0.0f);
+		G.DrawLine(scaleBold() ? &bigScaleBoldPen : &bigScalePen, bigScaleBegin, 0.0f, bigScaleEnd, 0.0f);
 
 		int index = bigIndex * maxSec() / bigScaleDiv[maxSecIndex] / 60;
 		//std::wstring indexText = formatString((index % 60 || 0 == index) ? L"%d" : L"%d" MOD_LETTER_H, (index % 60) ? index : index / 60);
@@ -337,9 +354,10 @@ void TimerGraphic::draw(HDC hdc, int w, int h)
 		for (int smallIndex = 0; smallIndex < smallScaleDiv[maxSecIndex]; ++smallIndex) {
 			REAL degree = 360.0f / (bigScaleDiv[maxSecIndex] * smallScaleDiv[maxSecIndex]);
 			accrueDegree += degree; // for billboard text of index
+			++scaleCount;
 			G.RotateTransform(-degree); // rotate CW by small scale degree
 			if (smallScaleDiv[maxSecIndex] - 1 != smallIndex) { // not big scale
-				G.DrawLine(&smallScalePen, smallScaleBegin, 0.0f, smallScaleEnd, 0.0f);
+				G.DrawLine(scaleBold() ? &smallScaleBoldPen : &smallScalePen, smallScaleBegin, 0.0f, smallScaleEnd, 0.0f);
 			}
 		}
 	}

@@ -8,6 +8,7 @@ namespace bugiii_timer_window {
 	LPCWSTR className_ = L"TimerWindow_Class";
 	ATOM classAtom_ = 0;
 	int windowCount_ = 0;
+	int TIMER_ID_1SEC = 1;
 	const int timerPeriod = debug ? 100 : 1000;
 	const int timeDiv = debug ? 10 : 10000;
 }
@@ -92,8 +93,6 @@ HWND TimerWindow::createWindow()
 	UpdateWindow(hwnd);
 	InvalidateRect(hwnd, nullptr, FALSE);
 
-	SetTimer(hwnd, 1, timerPeriod, nullptr);
-
 	return hwnd;
 }
 
@@ -124,6 +123,8 @@ LRESULT CALLBACK TimerWindow::windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 {
 	switch (msg) {
 		HANDLE_MSG(hwnd, WM_COMMAND, onCommand);
+		HANDLE_MSG(hwnd, WM_CREATE, onCreate);
+		HANDLE_MSG(hwnd, WM_DESTROY, onDestroy);
 		HANDLE_MSG(hwnd, WM_DPICHANGED, onDpiChanged);
 		HANDLE_MSG(hwnd, WM_LBUTTONDOWN, onLButtonDown);
 		HANDLE_MSG(hwnd, WM_LBUTTONUP, onLButtonUp);
@@ -247,6 +248,17 @@ void TimerWindow::onCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	}
 }
 
+BOOL TimerWindow::onCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
+{
+	SetTimer(hwnd, TIMER_ID_1SEC, timerPeriod, nullptr);
+	return TRUE;
+}
+
+void TimerWindow::onDestroy(HWND hwnd)
+{
+	KillTimer(hwnd, TIMER_ID_1SEC);
+}
+
 UINT TimerWindow::onDpiChanged(HWND hwnd, int x, int y, LPRECT rect)
 {
 	zoom_.dpi(getDpi(hwnd));
@@ -281,6 +293,7 @@ void TimerWindow::onMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 		int r = graph_->secFromXY(hwnd, x, y);
 		graph_->restartSec = r;
 		graph_->remainSec = r;
+		//??? graph_->setting = true;
 		InvalidateRect(hwnd, nullptr, FALSE);
 	}
 }
